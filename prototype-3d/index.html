@@ -1,0 +1,38 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+  <meta name="theme-color" content="#10251b">
+  <title>Capivara — O Segredo das Duas Eras | Protótipo 3D</title>
+  <link rel="preconnect" href="https://cdn.jsdelivr.net">
+  <link rel="stylesheet" href="./style.css">
+  <script type="importmap">
+    {"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.180.0/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.180.0/examples/jsm/"}}
+  </script>
+</head>
+<body>
+  <main id="game">
+    <div id="viewport" aria-label="Mundo 3D da Amazônia"></div>
+    <header class="hud">
+      <div class="brand"><span>🦫</span><div><strong>O Segredo das Duas Eras</strong><small>Capítulo 1 · Amazônia</small></div></div>
+      <div class="stats"><span>🍈 <b id="fruitCount">0</b>/8</span><span>♥ <b id="hearts">3</b></span></div>
+    </header>
+    <section class="mission"><small>MISSÃO ATUAL</small><strong id="missionText">Encontre os frutos da floresta</strong></section>
+    <div class="camera-panel" aria-label="Modos de câmera">
+      <button data-camera="free" title="Câmera livre">360°</button>
+      <button data-camera="thirdPerson" class="selected" title="Terceira pessoa">3ª PESSOA</button>
+      <button data-camera="close" title="Câmera próxima">PERTO</button>
+      <button data-camera="cinematic" title="Câmera cinematográfica">CINEMA</button>
+    </div>
+    <div class="touch-ui">
+      <div class="stick-area"><div id="stick" class="stick"><span></span></div></div>
+      <div class="action-buttons"><button id="runBtn">CORRER</button><button id="jumpBtn">PULAR</button></div>
+    </div>
+    <div id="loading" class="loading"><div class="loader"></div><strong>Preparando a floresta...</strong><small>Carregando o primeiro mundo 3D</small></div>
+    <div id="message" class="message hidden"><div class="message-card"><small>AVENTURA</small><h1>Bem-vindo à Amazônia!</h1><p>Explore a floresta, colete frutos e descubra o caminho para o segredo das duas eras.</p><button id="startBtn">COMEÇAR A JORNADA</button></div></div>
+    <div id="error" class="error hidden"></div>
+  </main>
+  <script type="module" src="./src/main.js"></script>
+</body>
+</html>
