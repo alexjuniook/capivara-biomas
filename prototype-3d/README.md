@@ -1,65 +1,39 @@
-# Protótipo 3D — Capivara: O Segredo das Duas Eras
+# Capivara — O Segredo das Duas Eras
 
-Esta pasta inicia a reconstrução 3D de forma isolada. A versão Canvas 2D que está na raiz do site continua intacta; este protótipo ainda não substitui nem é servido pelo Cloudflare Pages.
+## Protótipo 3D isolado
 
-## Sistema de câmera
+A experiência 3D está em `prototype-3d/` e não altera a página de produção na raiz do repositório.
 
-`src/camera/CameraDirector.js` fornece quatro modos:
+### Abrir o protótipo
 
-- `free`: órbita livre de 360°.
-- `thirdPerson`: câmera de acompanhamento em terceira pessoa.
-- `cinematic`: órbita automática para cenas especiais.
-- `close`: câmera próxima para observar detalhes.
+Depois de publicar uma prévia do branch, a página fica em `/prototype-3d/`. Para testar localmente, sirva a pasta por HTTP (não abra o HTML como arquivo local), pois o projeto usa ES Modules e Three.js via CDN.
 
-### Dependências
+### Controles
 
-- Three.js com suporte a ES Modules.
-- `OrbitControls` de `three/addons/controls/OrbitControls.js`.
+- Teclado: WASD ou setas para andar; Espaço para pular; Shift para correr.
+- Celular: joystick virtual, botão PULAR e botão CORRER.
+- Câmera: Livre 360°, Terceira pessoa, Próxima e Cinematográfica.
+- Mouse/toque: arraste para orbitar e use roda/pinça para zoom nos modos interativos.
 
-### Integração mínima
+### Conteúdo implementado nesta etapa
 
-```js
-import * as THREE from 'three';
-import { CameraDirector } from './camera/CameraDirector.js';
+- Cena 3D Three.js com iluminação, sombras adaptadas ao dispositivo, névoa e terreno amazônico.
+- Capivara 3D construída com geometria procedural, com animação simples de patas e corpo.
+- Trilha, rio, árvores, folhagem, pedras, tronco caído e frutos colecionáveis.
+- Movimento, corrida, salto, limites da área e colisões simples com obstáculos.
+- Sistema de quatro câmeras em `src/camera/CameraDirector.js`.
+- Interface responsiva para desktop e celular.
 
-const scene = new THREE.Scene();
-const camera = new THREE.PerspectiveCamera(60, innerWidth / innerHeight, 0.1, 500);
-const renderer = new THREE.WebGLRenderer({ antialias: true });
-renderer.setSize(innerWidth, innerHeight);
-document.body.appendChild(renderer.domElement);
+### Limitações conhecidas
 
-// player deve ser um THREE.Object3D já adicionado à cena.
-const cameraDirector = new CameraDirector({
-  camera,
-  domElement: renderer.domElement,
-  scene,
-  target: player,
-  collisionObjects: obstacles
-});
+Este é um primeiro protótipo jogável, não o jogo final. A capivara ainda usa geometria procedural, sem modelo GLB nem animações profissionais; a física e as colisões são simplificadas; o sistema de vidas e progressão ainda não está completo; não há áudio, salvamento de campanha, inimigos ou portal para a Era Glacial nesta etapa. O protótipo depende de conexão com a internet para carregar Three.js do CDN.
 
-// Troca de modo sem reiniciar a fase:
-cameraDirector.setMode('free');       // 'free' | 'thirdPerson' | 'cinematic' | 'close'
-cameraDirector.setSensitivity(0.9);
-cameraDirector.setDistance(8);
-cameraDirector.setHeight(3);
+A compatibilidade e o desempenho ainda precisam ser verificados em aparelhos reais, especialmente no Samsung A07. O branch é de desenvolvimento e não foi mesclado à produção nem implantado no Cloudflare.
 
-// No loop principal:
-const clock = new THREE.Clock();
-function animate() {
-  requestAnimationFrame(animate);
-  const delta = clock.getDelta();
-  // Atualize física e posição do player antes da câmera.
-  cameraDirector.update(delta);
-  renderer.render(scene, camera);
-}
-animate();
+## Próximos marcos
 
-// Ao desmontar a cena:
-cameraDirector.dispose();
-```
-
-OrbitControls trata rotação por mouse/toque e zoom por roda/pinça nos dispositivos compatíveis. As preferências de modo, sensibilidade, distância e altura são salvas em localStorage. Informe em `collisionObjects` os objetos sólidos que devem impedir a câmera de atravessar o cenário.
-
-## Estado atual e limites
-
-Este commit adiciona o módulo de câmera e sua documentação. O repositório ainda contém o jogo 2D Canvas na raiz; não há ainda cena 3D, personagem GLB, colisores de mundo ou integração do módulo ao loop do jogo. É necessário construir essa cena e conectar o módulo antes de chamar a experiência de jogo 3D.
+1. Melhorar personagem, animações e colisões.
+2. Adicionar missões, NPCs originais e inimigos.
+3. Criar transição narrativa para o mundo glacial.
+4. Otimizar qualidade adaptativa e testar toque/desempenho em Android.
+5. Só então preparar uma prévia separada para validação antes de qualquer troca da produção.
