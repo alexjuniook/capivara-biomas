@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import { CameraDirector } from './camera/CameraDirector.js';
+import { AmbientLife } from './world/AmbientLife.js';
 
 const viewport = document.querySelector('#viewport');
 const loading = document.querySelector('#loading');
@@ -9,7 +10,7 @@ const fruitCount = document.querySelector('#fruitCount');
 const missionText = document.querySelector('#missionText');
 const heartsText = document.querySelector('#hearts');
 
-let renderer, scene, camera, director, player, clock;
+let renderer, scene, camera, director, player, clock, ambientLife;
 let started = false, collected = 0, lives = 3;
 const keys = { forward:0, right:0, jump:false, run:false };
 const solids = [];
@@ -94,7 +95,7 @@ function makeFruit(x,z) {
 }
 function createWorld() {
   scene=new THREE.Scene();scene.background=new THREE.Color('#8ccbd3');scene.fog=new THREE.FogExp2('#a6cbb4',.012);
-  scene.add(new THREE.HemisphereLight('#d8f2ff','#425b36',2.1));
+  const hemisphereLight=new THREE.HemisphereLight('#d8f2ff','#425b36',2.1);scene.add(hemisphereLight);
   const sun=new THREE.DirectionalLight('#fff0cf',3.2);sun.position.set(-18,30,12);sun.castShadow=true;sun.shadow.mapSize.set(1024,1024);sun.shadow.camera.left=-35;sun.shadow.camera.right=35;sun.shadow.camera.top=35;sun.shadow.camera.bottom=-35;sun.shadow.bias=-.0002;scene.add(sun);
   const ground=new THREE.Mesh(new THREE.PlaneGeometry(180,180,1,1),material('#587a43'));ground.rotation.x=-Math.PI/2;ground.receiveShadow=true;scene.add(ground);
   const path=new THREE.Mesh(new THREE.PlaneGeometry(12,100),material('#94784d'));path.rotation.x=-Math.PI/2;path.position.set(0,.012,-20);path.receiveShadow=true;scene.add(path);
@@ -116,6 +117,7 @@ function createWorld() {
   // distant canopy silhouettes
   for(let i=0;i<14;i++){const c=sphere(scene,'dossel-distante',5,[Math.sin(i*9)*28,10+Math.random()*5,-50-i*3],material(i%2?'#28684c':'#347b53'),12);c.scale.set(1.5,1,1.4);}
   player=makeCapybara();
+  ambientLife=new AmbientLife({scene,sun,hemisphere:hemisphereLight,quality:innerWidth<700?.55:1});
 }
 function setup() {
   renderer=new THREE.WebGLRenderer({antialias:innerWidth>700,alpha:false,powerPreference:'low-power'});
@@ -159,7 +161,7 @@ function updatePlayer(dt){
   player.position.z=THREE.MathUtils.damp(player.position.z,player.position.z+desiredZ*dt,keys.forward||keys.right?10:5,dt);
   player.position.x=THREE.MathUtils.clamp(player.position.x,-10,10);
   player.position.z=THREE.MathUtils.clamp(player.position.z,-78,11);
-  if(move.lengthSq()>.02){const angle=Math.atan2(move.x,move.z);player.rotation.y=THREE.MathUtils.damp(player.rotation.y,angle,10,dt);}
+  if(move.lengthSq()>.02){const angle=Math.atan2(-move.z,move.x);player.rotation.y=THREE.MathUtils.damp(player.rotation.y,angle,10,dt);}
   if(keys.jump&&!jumpWasDown&&grounded){verticalVelocity=7.5;grounded=false;}
   jumpWasDown=keys.jump;
   verticalVelocity-=18*dt;player.position.y+=verticalVelocity*dt;
@@ -178,6 +180,7 @@ function updateCollectibles(dt){
 function animate(){
   requestAnimationFrame(animate);const dt=Math.min(clock.getDelta(),.04);
   if(started){updatePlayer(dt);updateCollectibles(dt);}
+  if(ambientLife)ambientLife.update(dt,player);
   director.update(dt);
   renderer.render(scene,camera);
 }
