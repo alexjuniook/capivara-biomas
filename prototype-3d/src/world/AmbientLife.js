@@ -81,6 +81,8 @@ export class AmbientLife {
     const phase = (this.elapsed % this.dayLength) / this.dayLength;
     const daylight = 0.5 + 0.5 * Math.cos((phase - 0.25) * Math.PI * 2);
     const warm = THREE.MathUtils.clamp(daylight, 0.08, 1);
+    const sunAngle = phase * Math.PI * 2;
+    this.sun.position.set(Math.cos(sunAngle) * 24, Math.max(3, Math.sin(sunAngle) * 30), 12);
     this.sun.intensity = 0.45 + warm * 2.6;
     this.sun.color.setRGB(1, 0.72 + warm * 0.22, 0.48 + warm * 0.42);
     this.hemisphere.intensity = 0.45 + warm * 1.55;
