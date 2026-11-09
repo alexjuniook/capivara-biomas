@@ -13,4 +13,4 @@ O jogo usa Canvas 2D, CSS, JavaScript nativo e armazenamento local do navegador.
 ## Observação
 A versão original e modular permanece no repositório [ketin](https://github.com/alexjuniook/ketin), na pasta `Capivara-Jornada-pelos-Biomas`. Este repositório é uma cópia isolada para a implantação Pages.
 
-<!-- Redeploy Pages: build settings corrected; trigger production deployment. -->
+<!-- Cloudflare Pages production build: valid no-op build command configured. -->
