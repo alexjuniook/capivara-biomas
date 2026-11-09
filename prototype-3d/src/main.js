@@ -1,6 +1,8 @@
 import * as THREE from 'three';
 import { CameraDirector } from './camera/CameraDirector.js';
 import { AmbientLife } from './world/AmbientLife.js';
+import { CompanionSystem } from './characters/CompanionSystem.js';
+import { GlacialPortal } from './world/GlacialPortal.js';
 
 const viewport = document.querySelector('#viewport');
 const loading = document.querySelector('#loading');
@@ -10,7 +12,7 @@ const fruitCount = document.querySelector('#fruitCount');
 const missionText = document.querySelector('#missionText');
 const heartsText = document.querySelector('#hearts');
 
-let renderer, scene, camera, director, player, clock, ambientLife;
+let renderer, scene, camera, director, player, clock, ambientLife, companions, portal;\nlet glacialMode = false;
 let started = false, collected = 0, lives = 3;
 const keys = { forward:0, right:0, jump:false, run:false };
 const solids = [];
@@ -117,7 +119,7 @@ function createWorld() {
   // distant canopy silhouettes
   for(let i=0;i<14;i++){const c=sphere(scene,'dossel-distante',5,[Math.sin(i*9)*28,10+Math.random()*5,-50-i*3],material(i%2?'#28684c':'#347b53'),12);c.scale.set(1.5,1,1.4);}
   player=makeCapybara();
-  ambientLife=new AmbientLife({scene,sun,hemisphere:hemisphereLight,quality:innerWidth<700?.55:1});
+  ambientLife=new AmbientLife({scene,sun,hemisphere:hemisphereLight,quality:innerWidth<700?.55:1});\n  companions=new CompanionSystem({scene,player,onTalk:showCompanionDialogue});\n  portal=new GlacialPortal({scene,onEnter:showGlacialInvitation});
 }
 function setup() {
   renderer=new THREE.WebGLRenderer({antialias:innerWidth>700,alpha:false,powerPreference:'low-power'});
@@ -148,7 +150,7 @@ function bindControls(){
   function moveStick(e){const r=area.getBoundingClientRect(),cx=r.left+r.width/2,cy=r.top+r.height/2;let dx=e.clientX-cx,dy=e.clientY-cy;const max=36,len=Math.hypot(dx,dy);if(len>max){dx=dx/len*max;dy=dy/len*max;}stick.style.transform=`translate(${dx}px,${dy}px)`;keys.right=THREE.MathUtils.clamp(dx/max,-1,1);keys.forward=THREE.MathUtils.clamp(-dy/max,-1,1);}
   const jump=document.querySelector('#jumpBtn');jump.addEventListener('pointerdown',e=>{e.preventDefault();keys.jump=true;});['pointerup','pointercancel','pointerleave'].forEach(ev=>jump.addEventListener(ev,()=>keys.jump=false));
   const run=document.querySelector('#runBtn');run.addEventListener('pointerdown',()=>keys.run=true);['pointerup','pointercancel','pointerleave'].forEach(ev=>run.addEventListener(ev,()=>keys.run=false));
-  document.querySelector('#startBtn').addEventListener('click',()=>{started=true;welcome.classList.add('hidden');});
+  document.querySelector('#startBtn').addEventListener('click',()=>{started=true;welcome.classList.add('hidden');});\n  window.addEventListener('keydown',e=>{if(e.key.toLowerCase()==='e'&&started)interact();});\n  document.querySelector('#talkBtn')?.addEventListener('click',interact);\n  document.querySelector('#enterIceBtn')?.addEventListener('click',enterGlacialChapter);\n  document.querySelector('#closeDialogueBtn')?.addEventListener('click',()=>document.querySelector('#dialogue').classList.add('hidden'));
 }
 function updatePlayer(dt){
   const cameraForward=new THREE.Vector3();camera.getWorldDirection(cameraForward);cameraForward.y=0;cameraForward.normalize();
@@ -174,12 +176,12 @@ function updatePlayer(dt){
   // Simple physical blockers keep the character out of tree trunks and rocks.
   for(const obstacle of obstacles){const p=new THREE.Vector3();obstacle.getWorldPosition(p);const radius=obstacle.geometry?.parameters?.radius||.6;const dx=player.position.x-p.x,dz=player.position.z-p.z;const min=radius+.7;if(dx*dx+dz*dz<min*min&&Math.abs(player.position.y)<1.2){const d=Math.max(.001,Math.hypot(dx,dz));player.position.x=p.x+dx/d*min;player.position.z=p.z+dz/d*min;}}
 }
-function updateCollectibles(dt){
-  for(const fruit of fruits){if(fruit.userData.collected)continue;fruit.rotation.y+=dt*1.2;fruit.position.y=fruit.userData.baseY+Math.sin(performance.now()*.002+fruit.position.z)*.12;if(fruit.position.distanceTo(player.position.clone().add(new THREE.Vector3(0,1,0)))<1.45){fruit.userData.collected=true;fruit.visible=false;collected++;fruitCount.textContent=collected;if(collected===fruits.length)missionText.textContent='Trilha descoberta! A próxima era aguarda...';}}
+function showDialogue(title, message, button='CONTINUAR') {\n  const panel=document.querySelector('#dialogue');\n  document.querySelector('#dialogueTitle').textContent=title;\n  document.querySelector('#dialogueText').textContent=message;\n  document.querySelector('#closeDialogueBtn').textContent=button;\n  panel.classList.remove('hidden');\n}\nfunction showCompanionDialogue(item){\n  showDialogue(item.name+' · '+item.species,item.dialogue);\n  if(item.name==='Tico'&&collected===fruits.length){missionText.textContent='Converse com os amigos e atravesse o portal';}\n}\nfunction interact(){\n  if(companions?.interact())return;\n  if(portal?.unlocked&&player.position.distanceTo(portal.root.position)<4){showGlacialInvitation();return;}\n  showDialogue('A floresta está cheia de segredos','Chegue perto de Tico, Brasa ou Bento e pressione E para conversar. No celular, use o botão CONVERSAR.');\n}\nfunction showGlacialInvitation(){\n  if(!portal?.unlocked){showDialogue('Portal adormecido','A passagem só desperta quando os oito frutos forem encontrados e Tico revelar o caminho.');return;}\n  showDialogue('O segredo das duas eras','O portal despertou! Do outro lado existe um mundo de gelo, mamutes e aventuras que ninguém desta floresta conhece. Pressione ENTRAR NA ERA GLACIAL para atravessar.','ENTRAR NA ERA GLACIAL');\n  document.querySelector('#closeDialogueBtn').onclick=enterGlacialChapter;\n}\nfunction enterGlacialChapter(){\n  if(glacialMode)return;\n  glacialMode=true;\n  document.querySelector('#dialogue').classList.add('hidden');\n  document.querySelector('.brand small').textContent='Capítulo 2 · Era Glacial';\n  missionText.textContent='Explore a passagem congelada';\n  scene.background.set('#b9dce8');\n  scene.fog.color.set('#c6e5ed');scene.fog.density=.018;\n  scene.traverse(obj=>{if(obj.isMesh&&obj.material?.color&&obj.name!=='fruto'){const color=obj.material.color;if(color.g>.28&&color.r<.5){color.lerp(new THREE.Color('#a9c5c9'),.38);}}});\n  const snow=new THREE.Mesh(new THREE.PlaneGeometry(180,180),material('#dcebf0'));snow.rotation.x=-Math.PI/2;snow.position.y=.035;scene.add(snow);\n  for(let i=0;i<22;i++){const shard=new THREE.Mesh(new THREE.ConeGeometry(.45+Math.random()*.5,2+Math.random()*3,5),material('#9bd6e6',.3,{metalness:.08,transparent:true,opacity:.88}));shard.position.set((Math.random()-.5)*22,1,-10-Math.random()*65);shard.rotation.z=(Math.random()-.5)*.2;scene.add(shard);}\n  portal.root.visible=false;\n  showDialogue('Bem-vindo à Era Glacial','A floresta ficou para trás. Esta é a primeira passagem para o novo capítulo. Explore o gelo e procure as pegadas da família de Bento.');\n}\nfunction updateCollectibles(dt){
+  for(const fruit of fruits){if(fruit.userData.collected)continue;fruit.rotation.y+=dt*1.2;fruit.position.y=fruit.userData.baseY+Math.sin(performance.now()*.002+fruit.position.z)*.12;if(fruit.position.distanceTo(player.position.clone().add(new THREE.Vector3(0,1,0)))<1.45){fruit.userData.collected=true;fruit.visible=false;collected++;fruitCount.textContent=collected;if(collected===fruits.length){missionText.textContent='Frutos encontrados! Converse com Tico';portal?.unlock();showDialogue('Missão concluída','Você encontrou todos os frutos! O portal ancestral começou a brilhar. Procure Tico para descobrir como atravessar.');}}}
 }
 function animate(){
   requestAnimationFrame(animate);const dt=Math.min(clock.getDelta(),.04);
-  if(started){updatePlayer(dt);updateCollectibles(dt);}
+  if(started){updatePlayer(dt);updateCollectibles(dt);companions?.update(dt);portal?.update(dt,player);}
   if(ambientLife)ambientLife.update(dt,player);
   director.update(dt);
   renderer.render(scene,camera);
