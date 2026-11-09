@@ -46,6 +46,7 @@ export class CameraDirector {
     this.worldUp = new THREE.Vector3(0, 1, 0);
     this.direction = new THREE.Vector3();
     this.cinematicAngle = 0;
+    this.transitioning = false;
     this.disposed = false;
 
     this.controls = new OrbitControls(camera, domElement);
@@ -126,8 +127,13 @@ export class CameraDirector {
     const offset = new THREE.Vector3(0, height, distance);
     // Começa atrás do personagem; o jogador pode girar a órbita depois.
     const position = target.clone().add(offset);
-    if (immediate) this.camera.position.copy(position);
-    else this.desiredPosition.copy(position);
+    if (immediate) {
+      this.camera.position.copy(position);
+      this.transitioning = false;
+    } else {
+      this.desiredPosition.copy(position);
+      this.transitioning = true;
+    }
     this.controls.target.copy(target);
   }
 
@@ -202,6 +208,13 @@ export class CameraDirector {
       this.camera.position.lerp(desired, 1 - Math.exp(2.5 * delta));
       this.camera.lookAt(this.controls.target);
     } else {
+      if (this.transitioning) {
+        this.camera.position.lerp(this.desiredPosition, 1 - Math.exp(this.settings.transitionSpeed * delta));
+        if (this.camera.position.distanceToSquared(this.desiredPosition) < 0.025) {
+          this.camera.position.copy(this.desiredPosition);
+          this.transitioning = false;
+        }
+      }
       this.controls.update();
       this.#preventCameraClipping(this.controls.target);
     }
