@@ -1,0 +1,115 @@
+<!doctype html><html lang="pt-BR"><head><base target="_top"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no"><title>Capivara — Jornada pelos Biomas</title><style>
+:root{color-scheme:dark;font-family:Inter,system-ui,-apple-system,Segoe UI,sans-serif;background:#08130f;color:#f7f4e9}*{box-sizing:border-box}body{margin:0;min-height:100svh;background:radial-gradient(ellipse at 50% -15%,#466d51 0,#172d24 42%,#08130f 78%);display:grid;place-items:center;padding:16px}#app{width:min(1240px,100%);display:flex;flex-direction:column;gap:14px}.topbar,footer{display:flex;align-items:center;justify-content:space-between}.topbar{padding:3px 5px}.brand{display:flex;align-items:center;gap:12px}.brand-icon{font-size:38px;filter:drop-shadow(0 5px 10px #0008)}.brand strong{display:block;font-size:17px;letter-spacing:.2px}.brand small,footer{color:#b8c8bb;font-size:12px}.icon-btn{border:1px solid #91ad8a55;background:linear-gradient(145deg,#294536,#14291f);color:#f7f4e9;border-radius:14px;padding:9px 15px;font-size:21px;box-shadow:0 7px 20px #0004}#stage{position:relative;width:100%;aspect-ratio:16/9;max-height:76svh;background:#76b9d2;border:1px solid #c7e7a766;border-radius:20px;overflow:hidden;box-shadow:0 28px 90px #0009,0 0 0 5px #ffffff08,inset 0 0 30px #fff2}canvas{width:100%;height:100%;display:block;touch-action:none;image-rendering:auto}.overlay{position:absolute;inset:0;display:grid;place-items:center;background:linear-gradient(90deg,#081a15e8 0%,#0c2018c9 42%,#10251c30 100%);backdrop-filter:blur(2px)}.overlay.hidden{display:none}.panel{width:min(440px,90%);padding:clamp(20px,4vw,38px);border:1px solid #e2f0ce40;border-radius:25px;background:linear-gradient(145deg,#1c382bdF,#0d2019f2);box-shadow:0 28px 70px #0008,inset 0 1px #ffffff20}.eyebrow{font-size:10px;letter-spacing:3.5px;color:#c5e69b;font-weight:900}.panel h1{font-size:clamp(36px,6vw,64px);line-height:.92;margin:14px 0 16px;letter-spacing:-2px;text-shadow:0 5px 25px #0008}.panel h1 em{color:#c9ed91;font-style:normal}.panel p{color:#d5e2d7;line-height:1.6}.primary,.secondary{width:100%;border:0;border-radius:13px;padding:15px;font-weight:850;margin-top:10px;font-size:15px;transition:transform .16s,filter .16s;cursor:pointer}.primary:hover,.secondary:hover{transform:translateY(-2px);filter:brightness(1.08)}.primary{background:linear-gradient(135deg,#d9f5a8,#9fc76b);color:#1b3021;box-shadow:0 8px 25px #9fc76b33}.secondary{background:#ffffff13;color:#fff;border:1px solid #ffffff25}.panel small{display:block;color:#b6c8b9;font-size:10px;margin-top:16px}.mobile-controls{display:none;justify-content:center;align-items:center;gap:12px}.mobile-controls button{width:60px;height:54px;border-radius:16px;border:1px solid #a7c99a88;background:linear-gradient(145deg,#355b43,#172d22);color:#fff;font-size:20px;font-weight:850;box-shadow:0 6px 18px #0005;touch-action:none;user-select:none}.mobile-controls .jump{width:88px;background:linear-gradient(145deg,#d9f5a8,#9fc76b);color:#203522;font-size:12px}.mobile-controls .run{background:linear-gradient(145deg,#c48a43,#69431f)}footer{padding:0 5px;letter-spacing:.15px}@media(max-width:700px),(pointer:coarse){body{padding:8px;gap:9px}#app{gap:9px}#stage{max-height:none;aspect-ratio:16/10;border-radius:14px}.mobile-controls{display:flex}.topbar strong{font-size:14px}.brand-icon{font-size:30px}footer{font-size:9px}.panel{padding:20px}.panel h1{font-size:38px}}
+</style></head><body>
+<main id="app"><header class="topbar"><div class="brand"><span class="brand-icon">🦫</span><div><strong>Jornada pelos Biomas</strong><small>Uma aventura brasileira</small></div></div><button id="soundBtn" class="icon-btn" aria-label="Som">♫</button></header>
+<section id="stage"><canvas id="gameCanvas" width="960" height="540" aria-label="Jogo de plataforma"></canvas><div id="overlay" class="overlay"><div class="panel"><div class="eyebrow">AVENTURA BRASILEIRA</div><h1>Capivara<br><em>nos Biomas</em></h1><p>Explore o Brasil, colete frutos e proteja a natureza.</p><button id="playBtn" class="primary">Começar aventura</button><button id="levelsBtn" class="secondary">Escolher fase</button><small>Use ← → ou A/D para andar · Espaço/↑ para pular</small></div></div></section>
+<nav class="mobile-controls" aria-label="Controles do jogo"><button data-control="left" aria-label="Esquerda">◀</button><button data-control="right" aria-label="Direita">▶</button><button data-control="jump" class="jump" aria-label="Pular">PULAR</button><button data-control="run" class="run" aria-label="Correr">⚡</button></nav>
+<footer><span id="status">Pronto para explorar</span><span>Progresso salvo neste aparelho</span></footer></main>
+<script>
+const CONFIG={W:960,H:540,GRAVITY:.62,MAX_FALL:14,ACCEL:.72,AIR_ACCEL:.42,FRICTION:.82,MAX_SPEED:5.2,RUN_SPEED:7.8,JUMP:-13.2,JUMP_HOLD:-.38,JUMP_HOLD_FRAMES:14,COYOTE:8,BUFFER:9,INVULN:90,GROUND_Y:478};
+const BIOME_PALETTE={
+ 'Mata Atlântica':{sky:'#83c9d8',far:'#4c9b70',near:'#286a4b',ground:'#76503a',top:'#4d9b51',accent:'#f2a34b'},
+ 'Amazônia':{sky:'#76c8cf',far:'#398b67',near:'#185b48',ground:'#694b36',top:'#3d8748',accent:'#e6c34f'},
+ 'Cerrado':{sky:'#f3c77d',far:'#c18b4d',near:'#80613c',ground:'#8a5736',top:'#9b873f',accent:'#e56e43'},
+ 'Caatinga':{sky:'#f5bd78',far:'#c88a54',near:'#9a5e3d',ground:'#89543c',top:'#9b7945',accent:'#e6a63d'},
+ 'Pantanal':{sky:'#8bc9db',far:'#4f9d82',near:'#32765f',ground:'#72513b',top:'#4c9657',accent:'#e8c65c'},
+ 'Pampa':{sky:'#9bc9df',far:'#8db17b',near:'#668d62',ground:'#76543b',top:'#67934c',accent:'#e9b85d'}
+};
+
+// O protótipo usa arte vetorial desenhada no Canvas; não depende de imagens externas.
+const ASSETS={ready:true};
+
+const FX={roundRect(ctx,x,y,w,h,r){ctx.beginPath();ctx.roundRect(x,y,w,h,r);},glow(ctx,x,y,r,color){ctx.save();const g=ctx.createRadialGradient(x,y,0,x,y,r);g.addColorStop(0,color);g.addColorStop(1,'transparent');ctx.fillStyle=g;ctx.beginPath();ctx.arc(x,y,r,0,Math.PI*2);ctx.fill();ctx.restore();}};
+class Player{
+ constructor(x,y){this.x=x;this.y=y;this.w=48;this.h=40;this.vx=0;this.vy=0;this.face=1;this.grounded=false;this.coyote=0;this.buffer=0;this.jumpHold=0;this.lives=3;this.score=0;this.invuln=0;this.anim=0;this.squash=1;this.stretch=1;this.checkpointX=x;}
+ update(input,parts){this.anim+=Math.abs(this.vx)*.095;if(this.grounded)this.coyote=CONFIG.COYOTE;else this.coyote=Math.max(0,this.coyote-1);this.buffer=Math.max(0,this.buffer-1);if(input.jumpPressed)this.buffer=CONFIG.BUFFER;
+ const accel=this.grounded?CONFIG.ACCEL:CONFIG.AIR_ACCEL;if(input.left){this.vx-=accel;this.face=-1;}if(input.right){this.vx+=accel;this.face=1;}const cap=input.run?CONFIG.RUN_SPEED:CONFIG.MAX_SPEED;this.vx=Math.max(-cap,Math.min(cap,this.vx));if(!input.left&&!input.right)this.vx*=this.grounded?CONFIG.FRICTION:.985;
+ if(this.buffer>0&&this.coyote>0){this.vy=CONFIG.JUMP;this.grounded=false;this.coyote=0;this.buffer=0;this.jumpHold=CONFIG.JUMP_HOLD_FRAMES;this.squash=.78;this.stretch=1.25;for(let i=0;i<9;i++)parts.push(new Particle(this.x+this.w/2,this.y+this.h,Math.random()*4-2,-Math.random()*3,24));}
+ if(input.jump&&this.jumpHold>0&&this.vy<0){this.vy+=CONFIG.JUMP_HOLD;this.jumpHold--;}else if(!input.jump)this.jumpHold=0;
+ this.vy=Math.min(CONFIG.MAX_FALL,this.vy+CONFIG.GRAVITY);this.x+=this.vx;this.y+=this.vy;this.squash+=(1-this.squash)*.18;this.stretch+=(1-this.stretch)*.18;if(this.invuln>0)this.invuln--;
+ if(this.grounded&&Math.abs(this.vx)>2&&Math.random()<.3)parts.push(new Particle(this.x+this.w/2,this.y+this.h,Math.random()*2-1,-Math.random()*2,19));}
+ draw(ctx,camera){const x=this.x-camera;if(this.invuln>0&&Math.floor(this.invuln/5)%2===0)return;const run=Math.abs(this.vx)>1&&this.grounded,step=run?Math.sin(this.anim)*4:0;
+ ctx.save();ctx.translate(x+this.w/2,this.y+this.h);ctx.scale(this.face,1);ctx.scale(this.stretch,this.squash);ctx.translate(-this.w/2,-this.h);
+ // soft contact shadow
+ ctx.fillStyle='#17251c55';ctx.beginPath();ctx.ellipse(24,39,23,5,0,0,Math.PI*2);ctx.fill();
+ // back feet
+ ctx.strokeStyle='#60402e';ctx.lineWidth=5;ctx.lineCap='round';ctx.beginPath();ctx.moveTo(13,30);ctx.lineTo(12-step,38);ctx.moveTo(34,30);ctx.lineTo(34+step,38);ctx.stroke();
+ // body gradients
+ let fur=ctx.createLinearGradient(0,3,0,36);fur.addColorStop(0,'#d69a62');fur.addColorStop(.48,'#b87949');fur.addColorStop(1,'#805034');
+ ctx.fillStyle=fur;ctx.beginPath();ctx.ellipse(23,23,22,14,0,0,Math.PI*2);ctx.fill();
+ ctx.fillStyle='#9a603c';ctx.beginPath();ctx.ellipse(10,24,9,10,-.25,0,Math.PI*2);ctx.fill();
+ // neck and head
+ ctx.fillStyle='#c48653';ctx.beginPath();ctx.ellipse(34,13,12,11,-.2,0,Math.PI*2);ctx.fill();
+ ctx.fillStyle='#d49a68';ctx.beginPath();ctx.ellipse(39,19,10,7,.18,0,Math.PI*2);ctx.fill();
+ // ears
+ ctx.fillStyle='#805035';ctx.beginPath();ctx.ellipse(30,4,4,6,-.3,0,Math.PI*2);ctx.fill();ctx.fillStyle='#d69b70';ctx.beginPath();ctx.ellipse(30,4,2,3,-.3,0,Math.PI*2);ctx.fill();
+ // muzzle and nose
+ ctx.fillStyle='#e0b184';ctx.beginPath();ctx.ellipse(45,20,5,4,0,0,Math.PI*2);ctx.fill();ctx.fillStyle='#39271f';ctx.beginPath();ctx.ellipse(48,18,2.5,2,0,0,Math.PI*2);ctx.fill();
+ // eye highlight
+ ctx.fillStyle='#211a16';ctx.beginPath();ctx.arc(37,10,2.2,0,Math.PI*2);ctx.fill();ctx.fillStyle='#fff4d7';ctx.beginPath();ctx.arc(37.7,9.3,.8,0,Math.PI*2);ctx.fill();
+ // front feet
+ ctx.strokeStyle='#71482f';ctx.lineWidth=5;ctx.beginPath();ctx.moveTo(20,31);ctx.lineTo(20+step,38);ctx.moveTo(39,29);ctx.lineTo(39-step,38);ctx.stroke();
+ // fur highlight
+ ctx.strokeStyle='#e7b77f';ctx.lineWidth=1.5;ctx.beginPath();ctx.arc(22,17,13,3.6,5.5);ctx.stroke();
+ ctx.restore();}
+ hurt(){if(this.invuln>0)return false;this.lives--;this.invuln=CONFIG.INVULN;this.vx=-this.face*4;this.vy=-7;return true;}
+}
+class Platform{constructor(x,y,w,h,kind='soil'){Object.assign(this,{x,y,w,h,kind});}draw(ctx,c,p){const x=this.x-c;if(x+this.w<0||x>CONFIG.W)return;ctx.save();const g=ctx.createLinearGradient(0,this.y,0,this.y+this.h);g.addColorStop(0,p.top);g.addColorStop(.18,p.ground);g.addColorStop(1,'#392f2b');ctx.fillStyle=g;ctx.fillRect(x,this.y,this.w,this.h);ctx.fillStyle=this.kind==='stone'?'#b4ad91':p.top;FX.roundRect(ctx,x,this.y-2,this.w,12,5);ctx.fill();ctx.fillStyle='#ffffff20';ctx.fillRect(x,this.y+10,this.w,2);for(let i=0;i<this.w;i+=23){ctx.fillStyle='#241f1b30';ctx.fillRect(x+i,this.y+18+(i%3)*4,2,Math.max(3,this.h-20));}ctx.restore();}}
+class Enemy{constructor(x,y,min,max,type='crab'){Object.assign(this,{x,y,w:34,h:25,min,max,type,dir:1,dead:false,phase:Math.random()*5});}update(){this.phase+=.12;this.x+=this.dir*(this.type==='bird'?1.6:1.25);if(this.x<this.min||this.x+this.w>this.max)this.dir*=-1;}draw(ctx,c){if(this.dead)return;ctx.save();ctx.translate(this.x-c,this.y+Math.sin(this.phase)*2);if(this.type==='bird'){ctx.fillStyle='#f2d18a';ctx.beginPath();ctx.ellipse(17,13,14,9,0,0,Math.PI*2);ctx.fill();ctx.strokeStyle='#a66d3b';ctx.lineWidth=3;ctx.beginPath();ctx.moveTo(12,12);ctx.quadraticCurveTo(17,0,23,12);ctx.stroke();ctx.fillStyle='#e18c46';ctx.beginPath();ctx.moveTo(29,12);ctx.lineTo(37,15);ctx.lineTo(29,17);ctx.fill();}else{ctx.fillStyle='#354d43';ctx.beginPath();ctx.ellipse(17,15,17,10,0,0,Math.PI*2);ctx.fill();ctx.strokeStyle='#263b33';ctx.lineWidth=3;for(let i=0;i<3;i++){ctx.beginPath();ctx.moveTo(8+i*8,19);ctx.lineTo(5+i*8,25);ctx.stroke();}ctx.fillStyle='#fff4d9';ctx.beginPath();ctx.arc(this.dir>0?24:10,9,3,0,Math.PI*2);ctx.fill();ctx.fillStyle='#171d19';ctx.fillRect(this.dir>0?25:9,8,2,3);}ctx.restore();}}
+class Fruit{constructor(x,y){Object.assign(this,{x,y,w:18,h:20,base:y,phase:Math.random()*6,collected:false});}update(){this.phase+=.07;this.y=this.base+Math.sin(this.phase)*4;}draw(ctx,c,p){if(this.collected)return;const x=this.x-c+9,y=this.y+10;FX.glow(ctx,x,y,24,p.accent+'66');ctx.save();const g=ctx.createRadialGradient(x-3,y-4,1,x,y,10);g.addColorStop(0,'#fff5b0');g.addColorStop(.35,p.accent);g.addColorStop(1,'#a74724');ctx.fillStyle=g;ctx.beginPath();ctx.arc(x,y,8,0,Math.PI*2);ctx.fill();ctx.strokeStyle='#f7d28a';ctx.lineWidth=1;ctx.stroke();ctx.strokeStyle='#315c35';ctx.lineWidth=3;ctx.beginPath();ctx.moveTo(x,y-7);ctx.quadraticCurveTo(x+2,y-14,x+7,y-12);ctx.stroke();ctx.restore();}}
+class Particle{constructor(x,y,vx,vy,life){Object.assign(this,{x,y,vx,vy,life,max:life,size:2+Math.random()*4});}update(){this.x+=this.vx;this.y+=this.vy;this.vy+=.08;this.life--;}draw(ctx,c){ctx.save();ctx.globalAlpha=Math.max(0,this.life/this.max);FX.glow(ctx,this.x-c,this.y,this.size*3,'#f7d88b88');ctx.fillStyle='#fff0b8';ctx.beginPath();ctx.arc(this.x-c,this.y,this.size/2,0,Math.PI*2);ctx.fill();ctx.restore();}}
+
+const BIOMES=[
+ {name:'Mata Atlântica',levels:['Trilha da Floresta','Cachoeira Escondida','Guardião da Mata']},
+ {name:'Amazônia',levels:['Rios da Amazônia','Árvores Gigantes','Coração da Floresta']},
+ {name:'Cerrado',levels:['Campos Dourados','Veredas','Chapada Encantada']},
+ {name:'Caatinga',levels:['Sertão de Pedra','Oásis do Mandacaru','Sol do Sertão']},
+ {name:'Pantanal',levels:['Planície Alagada','Caminho das Garças','Reino das Águas']},
+ {name:'Pampa',levels:['Campos Sulinos','Vento dos Pampas','Horizonte Livre']}
+];
+function makeLevel(index){const biome=BIOMES[Math.floor(index/3)],sub=index%3,seed=index+1,width=2600+sub*250,plats=[new Platform(0,CONFIG.GROUND_Y,width,100)];let x=170;for(let i=0;i<12+sub*2;i++){const y=CONFIG.GROUND_Y-85-(i%3)*48;const w=110+(i%2)*35;plats.push(new Platform(x,y,w,18,i%4===0?'stone':'soil'));x+=175+(i%3)*22;}
+ const fruits=[];for(let i=0;i<22+sub*3;i++){const px=140+i*105;const py=(i%3===0?CONFIG.GROUND_Y-140:CONFIG.GROUND_Y-55-(i%2)*35);fruits.push(new Fruit(px,py));}
+ const enemies=[];for(let i=0;i<7+sub;i++){const ex=380+i*285;enemies.push(new Enemy(ex,CONFIG.GROUND_Y-27,ex-45,ex+125,i%3===0?'bird':'crab'));}
+ return {index,name:biome.name,title:biome.levels[sub],width,platforms:plats,fruits,enemies,start:{x:55,y:CONFIG.GROUND_Y-45},palette:BIOME_PALETTE[biome.name],biome:biome.name};}
+
+const UI={hud(ctx,p,l){ctx.save();ctx.fillStyle='#10251ddd';ctx.fillRect(14,12,390,66);ctx.fillStyle='#fff';ctx.font='bold 17px system-ui';ctx.fillText(l.biome+' · '+l.title,28,37);ctx.font='14px system-ui';ctx.fillText('🍒 '+p.score+'     ♥ '+p.lives+'     Fase '+(l.index+1)+'/18',28,61);ctx.restore();},message(ctx,title,sub){ctx.save();ctx.fillStyle='#10251edb';ctx.fillRect(0,0,CONFIG.W,CONFIG.H);ctx.textAlign='center';ctx.fillStyle='#d4e9a3';ctx.font='bold 42px system-ui';ctx.fillText(title,CONFIG.W/2,CONFIG.H/2-8);ctx.fillStyle='white';ctx.font='18px system-ui';ctx.fillText(sub,CONFIG.W/2,CONFIG.H/2+32);ctx.restore();}};
+
+(()=>{
+const canvas=document.getElementById('gameCanvas'),ctx=canvas.getContext('2d'),overlay=document.getElementById('overlay'),status=document.getElementById('status');let level,player,parts=[],camera=0,state='menu',levelIndex=0,score=0,sound=true,keys={left:false,right:false,jump:false,jumpPressed:false,run:false},last=0,worldTime=0;
+function loadLevel(i){levelIndex=Math.max(0,Math.min(17,i));level=makeLevel(levelIndex);player=new Player(level.start.x,level.start.y);player.score=score;parts=[];camera=0;state='playing';overlay.classList.add('hidden');status.textContent=level.biome+' · '+level.title;}
+function start(){score=0;loadLevel(0);}function finish(){state='won';overlay.classList.remove('hidden');overlay.querySelector('.eyebrow').textContent='FASE CONCLUÍDA';overlay.querySelector('h1').innerHTML='Muito bem!<br><em>🦫</em>';overlay.querySelector('p').textContent=levelIndex===17?'Você concluiu os seis biomas do Brasil!':'Frutos coletados e natureza protegida. Próxima parada: '+BIOMES[Math.floor((levelIndex+1)/3)].name+'.';document.getElementById('playBtn').textContent=levelIndex===17?'Jogar novamente':'Próxima fase';document.getElementById('levelsBtn').textContent='Voltar ao início';}
+function lose(){state='over';overlay.classList.remove('hidden');overlay.querySelector('.eyebrow').textContent='FIM DE JOGO';overlay.querySelector('h1').innerHTML='Vamos<br><em>tentar de novo?</em>';overlay.querySelector('p').textContent='A aventura continua. Seu melhor progresso fica salvo neste aparelho.';document.getElementById('playBtn').textContent='Tentar novamente';document.getElementById('levelsBtn').textContent='Voltar ao início';}
+function overlap(a,b){return a.x<b.x+b.w&&a.x+a.w>b.x&&a.y<b.y+b.h&&a.y+a.h>b.y;}
+function update(){if(state!=='playing')return;worldTime++;player.update(keys,parts);const wasGrounded=player.grounded;player.grounded=false;
+ for(const p of level.platforms){if(overlap(player,p)&&player.vy>=0&&player.y+player.h-player.vy<=p.y+8){player.y=p.y-player.h;player.vy=0;player.grounded=true;if(!wasGrounded){player.squash=1.2;player.stretch=.82;}}}
+ if(player.y>CONFIG.H+100){if(player.hurt()){player.x=player.checkpointX;player.y=level.start.y;}if(player.lives<=0)lose();}
+ for(const e of level.enemies){if(e.dead)continue;e.update();if(overlap(player,e)){if(player.vy>1&&player.y+player.h-player.vy<e.y+12){e.dead=true;player.vy=-8;player.score+=25;}else if(player.hurt()&&player.lives<=0)lose();}}
+ for(const f of level.fruits){f.update();if(!f.collected&&overlap(player,f)){f.collected=true;player.score+=10;for(let i=0;i<10;i++)parts.push(new Particle(f.x+8,f.y+8,Math.random()*5-2.5,Math.random()*-4,26));}}
+ parts.forEach(p=>p.update());parts=parts.filter(p=>p.life>0);camera=Math.max(0,Math.min(level.width-CONFIG.W,camera+(player.x-CONFIG.W*.35-camera)*.09));keys.jumpPressed=false;
+ if(level.fruits.every(f=>f.collected)){score=player.score;try{localStorage.setItem('capivaraProgress',JSON.stringify({unlocked:Math.max(levelIndex+2,Number(localStorage.getItem('capivaraUnlocked')||1)),score}));localStorage.setItem('capivaraUnlocked',String(Math.max(levelIndex+2,Number(localStorage.getItem('capivaraUnlocked')||1))));}catch(e){}finish();}}
+function cloud(x,y,s){ctx.save();ctx.translate(x,y);ctx.scale(s,s);ctx.fillStyle='#ffffff55';ctx.beginPath();ctx.arc(0,8,20,0,Math.PI*2);ctx.arc(23,0,27,0,Math.PI*2);ctx.arc(49,10,19,0,Math.PI*2);ctx.fill();ctx.restore();}
+function tree(x,y,s,p,variant){ctx.save();ctx.translate(x,y);ctx.scale(s,s);ctx.fillStyle='#302f2755';ctx.beginPath();ctx.ellipse(0,2,38,8,0,0,Math.PI*2);ctx.fill();ctx.fillStyle=variant?'#62442f':'#58402e';ctx.fillRect(-5,-105,10,108);ctx.fillStyle=p.far;ctx.beginPath();ctx.arc(-14,-106,34,0,Math.PI*2);ctx.arc(17,-119,39,0,Math.PI*2);ctx.arc(0,-143,30,0,Math.PI*2);ctx.fill();ctx.fillStyle='#ffffff18';ctx.beginPath();ctx.arc(8,-137,20,3.5,5.6);ctx.fill();ctx.restore();}
+function background(){const p=level.palette;const g=ctx.createLinearGradient(0,0,0,CONFIG.H);g.addColorStop(0,p.sky);g.addColorStop(.62,level.biome==='Caatinga'?'#f6c88a':'#b9dcae');g.addColorStop(1,'#e9d6a1');ctx.fillStyle=g;ctx.fillRect(0,0,CONFIG.W,CONFIG.H);
+ // sun bloom and distant atmospheric mountains
+ const sunX=760-camera*.035;const sun=ctx.createRadialGradient(sunX,100,8,sunX,100,145);sun.addColorStop(0,'#fff5c9b0');sun.addColorStop(1,'#fff5c900');ctx.fillStyle=sun;ctx.fillRect(0,0,CONFIG.W,300);ctx.fillStyle=p.far;ctx.beginPath();ctx.moveTo(0,CONFIG.GROUND_Y);for(let i=0;i<8;i++){let x=i*155-(camera*.12%155);ctx.quadraticCurveTo(x+70,215+(i%3)*36,x+155,CONFIG.GROUND_Y);}ctx.fill();
+ cloud((120-camera*.08)%1150,95,.9);cloud((520-camera*.06)%1200,145,.65);cloud((880-camera*.1)%1200,72,.8);
+ // midground forest silhouettes
+ for(let i=0;i<12;i++){const x=((i*112-camera*.32)%(CONFIG.W+180)+CONFIG.W+180)%(CONFIG.W+180)-90;tree(x,CONFIG.GROUND_Y+8,.55+(i%3)*.12,p,i%2);}
+ // foreground foliage framing the scene
+ ctx.fillStyle=p.near;for(let i=0;i<9;i++){const x=((i*145-camera*.62)%(CONFIG.W+180)+CONFIG.W+180)%(CONFIG.W+180)-80;ctx.beginPath();ctx.ellipse(x,CONFIG.GROUND_Y+18,45,24,0,Math.PI,Math.PI*2);ctx.fill();}
+ // soft atmospheric haze
+ const haze=ctx.createLinearGradient(0,300,0,CONFIG.GROUND_Y);haze.addColorStop(0,'#fff0');haze.addColorStop(1,'#f4e4ad35');ctx.fillStyle=haze;ctx.fillRect(0,300,CONFIG.W,CONFIG.H-300);
+}
+function draw(){if(!level){ctx.fillStyle='#18392c';ctx.fillRect(0,0,CONFIG.W,CONFIG.H);return;}ctx.save();background();for(const p of level.platforms)p.draw(ctx,camera,level.palette);for(const f of level.fruits)f.draw(ctx,camera,level.palette);for(const e of level.enemies)e.draw(ctx,camera);for(const p of parts)p.draw(ctx,camera);player.draw(ctx,camera);UI.hud(ctx,player,level);
+ // cinematic vignette and subtle color grade
+ const vignette=ctx.createRadialGradient(480,250,150,480,270,610);vignette.addColorStop(0,'#101b1800');vignette.addColorStop(1,'#101b184f');ctx.fillStyle=vignette;ctx.fillRect(0,0,CONFIG.W,CONFIG.H);
+ ctx.restore();if(state==='over')UI.message(ctx,'FIM DE JOGO','Toque em tentar novamente');}
+function loop(t){last=t;if(state==='playing')update();draw();requestAnimationFrame(loop);}
+function key(e,on){const k=e.key.toLowerCase();if(['arrowleft','arrowright','arrowup',' ','a','d','shift','w'].includes(k))e.preventDefault();if(k==='arrowleft'||k==='a')keys.left=on;if(k==='arrowright'||k==='d')keys.right=on;if(k==='shift')keys.run=on;if(k==='arrowup'||k==='w'||k===' ') {if(on&&!keys.jump)keys.jumpPressed=true;keys.jump=on;}}
+window.addEventListener('keydown',e=>key(e,true));window.addEventListener('keyup',e=>key(e,false));window.addEventListener('blur',()=>{keys={left:false,right:false,jump:false,jumpPressed:false,run:false};});
+document.querySelectorAll('[data-control]').forEach(b=>{const k=b.dataset.control,down=e=>{e.preventDefault();if(k==='left')keys.left=true;else if(k==='right')keys.right=true;else if(k==='run')keys.run=true;else{if(!keys.jump)keys.jumpPressed=true;keys.jump=true;}},up=e=>{e.preventDefault();if(k==='left')keys.left=false;else if(k==='right')keys.right=false;else if(k==='run')keys.run=false;else keys.jump=false;};b.addEventListener('pointerdown',down);b.addEventListener('pointerup',up);b.addEventListener('pointerleave',up);b.addEventListener('pointercancel',up);});
+document.getElementById('playBtn').addEventListener('click',()=>{if(state==='won'&&levelIndex<17)loadLevel(levelIndex+1);else start();});document.getElementById('levelsBtn').addEventListener('click',()=>{const n=Number(prompt('Digite a fase de 1 a 18:','1'));if(Number.isInteger(n)&&n>=1&&n<=18){const unlocked=Number(localStorage.getItem('capivaraUnlocked')||1);if(n<=unlocked)loadLevel(n-1);else alert('Conclua as fases anteriores para desbloquear esta.');}else{overlay.querySelector('.eyebrow').textContent='AVENTURA BRASILEIRA';overlay.querySelector('h1').innerHTML='Capivara<br><em>nos Biomas</em>';overlay.querySelector('p').textContent='Explore o Brasil, colete frutos e proteja a natureza.';document.getElementById('playBtn').textContent='Começar aventura';document.getElementById('levelsBtn').textContent='Escolher fase';state='menu';}});
+document.getElementById('soundBtn').addEventListener('click',e=>{sound=!sound;e.currentTarget.textContent=sound?'♫':'♪';});requestAnimationFrame(loop);
+})();
+</script>
+</body></html>
