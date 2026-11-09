@@ -41,6 +41,7 @@ export class CameraDirector {
     this.settings = { ...DEFAULTS, ...this.#loadSettings(), ...settings };
     this.mode = MODES.has(this.settings.mode) ? this.settings.mode : DEFAULTS.mode;
     this.lookTarget = new THREE.Vector3();
+    this.previousTarget = this.#getTargetPosition().clone();
     this.desiredPosition = new THREE.Vector3();
     this.raycaster = new THREE.Raycaster();
     this.worldUp = new THREE.Vector3(0, 1, 0);
@@ -187,7 +188,14 @@ export class CameraDirector {
   update(deltaSeconds = 1 / 60) {
     if (this.disposed) return;
     const delta = Math.min(Math.max(deltaSeconds, 0), 0.05);
-    const target = this.#getTargetPosition();
+    const target = this.#getTargetPosition().clone();
+    const targetDelta = target.clone().sub(this.previousTarget);
+    if (this.mode !== 'cinematic' && targetDelta.lengthSq() > 0) {
+      this.camera.position.add(targetDelta);
+      this.controls.target.add(targetDelta);
+      if (this.transitioning) this.desiredPosition.add(targetDelta);
+    }
+    this.previousTarget.copy(target);
     const followHeight = this.mode === 'close'
       ? this.settings.closeHeight
       : this.settings.height;
