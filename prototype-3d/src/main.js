@@ -84,7 +84,7 @@ function makeCapybara() {
     legs.push(leg);
   }
   root.userData.legs=legs;root.userData.head=head;root.userData.torso=torso;
-  root.position.set(0,0,5);return root;
+  root.position.set(0,0,5);root.rotation.y=Math.PI/2;return root;
 }
 function makeFruit(x,z) {
   const group=new THREE.Group();group.position.set(x,.95,z);scene.add(group);
