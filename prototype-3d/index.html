@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
   <meta name="theme-color" content="#10251b">
-  <title>Capivara — O Segredo das Duas Eras | Protótipo 3D</title>
+  <title>Capivara — O Segredo das Três Eras | Aventura 3D</title>
   <link rel="preconnect" href="https://cdn.jsdelivr.net">
   <link rel="stylesheet" href="./style.css">
   <script type="importmap">
@@ -13,7 +13,7 @@
 </head>
 <body>
   <main id="game">
-    <div id="viewport" aria-label="Mundo 3D da Amazônia"></div>
+    <div id="viewport" aria-label="Mundo 3D da aventura"></div>
     <header class="hud">
       <div class="brand"><span>🦫</span><div><strong>O Segredo das Duas Eras</strong><small>Capítulo 1 · Amazônia</small></div></div>
       <div class="stats"><span id="fruitStat">🍈 <b id="fruitCount">0</b>/8</span><span id="iceStat" class="hidden">💎 <b id="iceCount">0</b>/5</span><span>♥ <b id="hearts">3</b></span></div>
@@ -29,7 +29,9 @@
       <div class="stick-area"><div id="stick" class="stick"><span></span></div></div>
       <div class="action-buttons"><button id="talkBtn">CONVERSAR</button><button id="scareBtn">ASSUSTAR</button><button id="runBtn">CORRER</button><button id="jumpBtn">PULAR</button></div>
     </div>
-    <section id="dialogue" class="dialogue hidden" role="dialog" aria-live="polite"><div class="dialogue-card"><small>ENCONTRO</small><h2 id="dialogueTitle">Personagem</h2><p id="dialogueText"></p><button id="closeDialogueBtn">CONTINUAR</button></div></section>\n    <section id="iceInvitation" class="hidden"></section>\n    <div id="loading" class="loading"><div class="loader"></div><strong>Preparando a floresta...</strong><small>Carregando o primeiro mundo 3D</small></div>
+    <section id="dialogue" class="dialogue hidden" role="dialog" aria-live="polite"><div class="dialogue-card"><small>ENCONTRO</small><h2 id="dialogueTitle">Personagem</h2><p id="dialogueText"></p><button id="closeDialogueBtn">CONTINUAR</button></div></section>
+    <section id="iceInvitation" class="hidden"></section>
+    <div id="loading" class="loading"><div class="loader"></div><strong>Preparando a floresta...</strong><small>Carregando o primeiro mundo 3D</small></div>
     <div id="message" class="message hidden"><div class="message-card"><small>AVENTURA</small><h1>Bem-vindo à Amazônia!</h1><p>Explore a floresta, colete frutos e descubra o caminho para o segredo das duas eras.</p><button id="startBtn">COMEÇAR A JORNADA</button></div></div>
     <div id="error" class="error hidden"></div>
   </main>
