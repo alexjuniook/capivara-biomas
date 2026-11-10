@@ -1,12 +1,13 @@
 import * as THREE from 'three';
+import { createTerrain } from './TerrainBuilder.js';
 
 export function buildCerradoBiome(scene, quality = 1) {
   const added = [];
   const mat = (color, roughness = 0.95) => new THREE.MeshStandardMaterial({ color, roughness });
   const add = object => { scene.add(object); added.push(object); return object; };
 
-  const earth = add(new THREE.Mesh(new THREE.PlaneGeometry(180,180), mat('#b58b58')));
-  earth.rotation.x = -Math.PI / 2; earth.position.y = 0.055; earth.receiveShadow = true;
+  const earth = createTerrain(scene,{biome:'cerrado',quality,materialColor:'#b58b58'}).mesh;
+  added.push(earth);
 
   const trail = add(new THREE.Mesh(new THREE.PlaneGeometry(9,100), mat('#d6b77c')));
   trail.rotation.x = -Math.PI / 2; trail.position.set(0,0.075,-28);
@@ -110,7 +111,7 @@ export function buildCerradoBiome(scene, quality = 1) {
     pollen.instanceMatrix.needsUpdate=true;
   }, dispose(){
     const geometries=new Set(),materials=new Set();
-    for(const object of added){scene.remove(object);object.traverse?.(child=>{if(child.geometry)geometries.add(child.geometry);if(child.material){for(const m of (Array.isArray(child.material)?child.material:[child.material]))materials.add(m);}});}
+    for(const object of added){scene.remove(object);object.traverse?.(child=>{if(child.geometry)geometries.add(child.geometry);if(child.material){for(const m of (Array.isArray(child.material)?child.material:[child.material])){materials.add(m);if(m.map)m.map.dispose();}}});}
     geometries.forEach(g=>g.dispose());materials.forEach(m=>m.dispose());
   } };
 }
