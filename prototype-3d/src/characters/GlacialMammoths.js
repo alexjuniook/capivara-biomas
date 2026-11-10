@@ -69,7 +69,14 @@ export class GlacialMammoths {
       this.calf.rotation.y=Math.sin(this.phase*.7)*.18;
     }
   }
-  dispose(){ this.scene.remove(this.parent); this.scene.remove(this.calf); }
+  dispose(){
+    const geometries=new Set(),materials=new Set();
+    for(const root of [this.parent,this.calf]){
+      this.scene.remove(root);
+      root.traverse(child=>{if(child.geometry)geometries.add(child.geometry);if(child.material){for(const material of (Array.isArray(child.material)?child.material:[child.material]))materials.add(material);}});
+    }
+    geometries.forEach(geometry=>geometry.dispose());materials.forEach(material=>material.dispose());
+  }
   interact(){
     if(this.rescued)return false;
     if(this.calf.position.distanceTo(this.player.position)>3.2)return false;
