@@ -65,7 +65,7 @@ export class AdventureJournal {
     if(newly.length)this.save();
     return newly;
   }
-  getUnlocked(){return this.unlocked.map(id=>ACHIEVEMENTS.find(item=>item[0]===id)).filter(Boolean);}
+  getUnlocked(){return this.getAll().filter(item=>item.unlocked);}
   getAll(){return ACHIEVEMENTS.map(([id,title,description,event,goal])=>({id,title,description,goal,unlocked:this.unlocked.includes(id),progress:Math.min(goal,event==='minutes'?this.minutes:event==='biomes'?this.biomes.length:Number(this.counts[event])||0)}));}
   getSummary(){return {unlocked:this.unlocked.length,total:ACHIEVEMENTS.length,minutes:Math.floor(this.minutes),biomes:[...this.biomes]};}
 }
