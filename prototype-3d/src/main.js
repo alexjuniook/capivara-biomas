@@ -14,6 +14,7 @@ import { WorldVisuals } from './world/WorldVisuals.js';
 import { WorldAtmosphere } from './world/WorldAtmosphere.js';
 import { GameSettings, QUALITY } from './systems/GameSettings.js';
 import { AdventureJournal } from './systems/AdventureJournal.js';
+import { StaminaSystem, CheckpointSystem, ExplorationHUD } from './systems/ExplorationSystems.js';
 
 const viewport = document.querySelector('#viewport');
 const loading = document.querySelector('#loading');
@@ -28,6 +29,9 @@ const audioAmbience = new AudioAmbience();
 let glacialMode = false, cerradoMode = false, snowParticles = null, snowDummy = null, snowPositions = [], glacialBiome = null, iceCrystals = [], glacialCrystals = 0, savedGlacialCrystals = [], savedMammothRescued = false, cerradoBiome = null, cerradoSeeds = [], cerradoSeedCount = 0, savedCerradoSeeds = [], savedAnteaterHelped = false, anteaterHelped = false, savedCerradoAnimals = [], cerradoGate = null;
 const progressStore = new ProgressStore();
 const journal = new AdventureJournal();
+const stamina = new StaminaSystem();
+const checkpoints = new CheckpointSystem();
+let explorationHUD, autosaveElapsed=0;
 const settingsStore = new GameSettings();
 const gameSettings = settingsStore.load();
 let paused = false, fpsFrames = 0, fpsElapsed = 0, fpsLast = performance.now(), adaptiveElapsed = 0, smoothedFrameMs = 16.7, currentPixelRatio = 1;
@@ -181,9 +185,11 @@ function setup() {
   document.querySelectorAll('[data-camera]').forEach(b=>b.classList.toggle('selected',b.dataset.camera===(gameSettings.cameraMode||'thirdPerson')));
   restoreProgress();
   journal.visitBiome('amazon');refreshJournal();
+  explorationHUD=new ExplorationHUD({canvas:document.querySelector('#minimapCanvas'),staminaFill:document.querySelector('#staminaFill'),staminaText:document.querySelector('#staminaText'),compass:document.querySelector('#compassText'),mapPanel:document.querySelector('#mapPanel'),saveStatus:document.querySelector('#saveStatus')});
+  checkpoints.setBiome('amazon');
   clock=new THREE.Clock();
   window.addEventListener('resize',resize);
-  window.addEventListener('pagehide',()=>{audioAmbience.dispose();atmosphere?.dispose();director?.dispose();},{once:true});
+  window.addEventListener('pagehide',()=>{saveProgress();audioAmbience.dispose();atmosphere?.dispose();director?.dispose();explorationHUD?.dispose();},{once:true});
   loading.classList.add('hidden');welcome.classList.remove('hidden');
 }
 function resize(){if(!renderer||!camera)return;camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();const touchDevice=matchMedia('(pointer:coarse)').matches;const preset=QUALITY[gameSettings.quality]||QUALITY.auto;currentPixelRatio=Math.min(devicePixelRatio,touchDevice?1.1:1.5)*preset.pixelRatio;renderer.setPixelRatio(currentPixelRatio);renderer.setSize(innerWidth,innerHeight);}
@@ -199,6 +205,7 @@ function bindControls(){
   const showSettings=visible=>{settingsPanel.classList.toggle('hidden',!visible);settingsBtn.setAttribute('aria-expanded',String(visible));};
   document.querySelector('#journalBtn')?.addEventListener('click',()=>{refreshJournal();document.querySelector('#journalPanel')?.classList.toggle('hidden');});
   document.querySelector('#closeJournalBtn')?.addEventListener('click',()=>document.querySelector('#journalPanel')?.classList.add('hidden'));
+  document.querySelector('#mapBtn')?.addEventListener('click',()=>explorationHUD?.setMapVisible(!explorationHUD.visible));
   settingsBtn.addEventListener('click',()=>showSettings(settingsPanel.classList.contains('hidden')));
   document.querySelector('#closeSettingsBtn').addEventListener('click',()=>showSettings(false));
   qualitySelect.addEventListener('change',()=>{gameSettings.quality=qualitySelect.value;persistSettings();const preset=QUALITY[gameSettings.quality]||QUALITY.auto;renderer.shadowMap.enabled=preset.shadows&&innerWidth>760&&!matchMedia('(pointer:coarse)').matches;renderer.setPixelRatio(Math.min(devicePixelRatio,matchMedia('(pointer:coarse)').matches?1.1:1.5)*preset.pixelRatio);currentPixelRatio=renderer.getPixelRatio();showDialogue('Gráficos atualizados','A nova qualidade será aplicada ao renderizador. Para reconstruir todos os detalhes do cenário, recarregue o jogo.');});
@@ -224,7 +231,7 @@ function bindControls(){
   const run=document.querySelector('#runBtn');run.addEventListener('pointerdown',()=>keys.run=true);['pointerup','pointercancel','pointerleave'].forEach(ev=>run.addEventListener(ev,()=>keys.run=false));
   document.querySelector('#startBtn').addEventListener('click',()=>{started=true;welcome.classList.add('hidden');const audioOn=gameSettings.soundEnabled?audioAmbience.start():false;document.querySelector('#audioBtn').textContent=audioOn?'SOM: LIGADO':'SOM: DESLIGADO';});
   document.querySelector('#audioBtn')?.addEventListener('click',()=>{const enabled=audioAmbience.toggle();gameSettings.soundEnabled=enabled;settingsStore.save(gameSettings);document.querySelector('#audioBtn').textContent=enabled?'SOM: LIGADO':'SOM: DESLIGADO';});
-  window.addEventListener('keydown',e=>{if(e.key==='Escape'&&started){paused=!paused;clearMovementInput();document.querySelector('#pauseBtn').textContent=paused?'CONTINUAR':'PAUSAR';if(paused)showDialogue('Jogo pausado','Abra AJUSTES e escolha CONTINUAR para retomar.');else document.querySelector('#dialogue').classList.add('hidden');}if(e.key.toLowerCase()==='e'&&started&&!paused)interact();if(e.key.toLowerCase()==='f'&&started&&!paused)scareWildlife();});
+  window.addEventListener('keydown',e=>{if(e.key.toLowerCase()==='c'&&started&&!paused){checkpoints.setPosition([player.position.x,0,player.position.z]);explorationHUD?.setSaveStatus('CHECKPOINT SALVO','saved');}if(e.key==='Escape'&&started){paused=!paused;clearMovementInput();document.querySelector('#pauseBtn').textContent=paused?'CONTINUAR':'PAUSAR';if(paused)showDialogue('Jogo pausado','Abra AJUSTES e escolha CONTINUAR para retomar.');else document.querySelector('#dialogue').classList.add('hidden');}if(e.key.toLowerCase()==='e'&&started&&!paused)interact();if(e.key.toLowerCase()==='f'&&started&&!paused)scareWildlife();});
   document.querySelector('#talkBtn')?.addEventListener('click',interact);
   document.querySelector('#scareBtn')?.addEventListener('click',scareWildlife);
   document.querySelector('#enterIceBtn')?.addEventListener('click',enterGlacialChapter);
@@ -266,7 +273,10 @@ function updatePlayer(dt){
   right.crossVectors(cameraForward,up).normalize();
   move.copy(cameraForward).multiplyScalar(keys.forward).addScaledVector(right,keys.right);
   if(move.lengthSq()>1)move.normalize();
-  const speed=keys.run?7.1:4.2;
+  const staminaState=stamina.update(dt,{running:keys.run,moving:move.lengthSq()>.02});
+  explorationHUD?.setStamina(staminaState);
+  const sprinting=keys.run&&staminaState.canRun;
+  const speed=sprinting?7.1:4.2;
   const desiredX=move.x*speed,desiredZ=move.z*speed;
   const response=keys.forward||keys.right?12:8;
   playerVelocity.x=THREE.MathUtils.damp(playerVelocity.x,desiredX,response,dt);
@@ -281,7 +291,7 @@ function updatePlayer(dt){
   verticalVelocity-=18*dt;player.position.y+=verticalVelocity*dt;
   if(player.position.y<=0){player.position.y=0;verticalVelocity=0;grounded=true;}
   const moving=move.lengthSq()>.02;
-  walkTime+=dt*(keys.run?13:8);
+  walkTime+=dt*(sprinting?13:8);
   player.userData.legs.forEach((leg,i)=>{leg.rotation.x=moving?Math.sin(walkTime+i*Math.PI)*.42:THREE.MathUtils.damp(leg.rotation.x,0,8,dt);});
   const breath=Math.sin(walkTime*.45)*.012;
   player.userData.torso.scale.y=.67+breath+(moving?Math.abs(Math.sin(walkTime*2))*.025:0);
@@ -289,7 +299,7 @@ function updatePlayer(dt){
   player.userData.head.rotation.x=moving?Math.sin(walkTime*.5)*.025:0;
   player.userData.tail.rotation.z=Math.sin(walkTime*.75)*.16+(moving?.06:0);
   player.userData.legs.forEach((leg,i)=>{leg.rotation.z=moving?Math.sin(walkTime+i*Math.PI)*.035:THREE.MathUtils.damp(leg.rotation.z,0,7,dt);});
-  updateFootstepDust(dt,moving);
+  updateFootstepDust(dt,moving&&sprinting);
   player.userData.ears.forEach((ear,i)=>{ear.rotation.z=Math.sin(walkTime*.7+i)*.045+(moving?-.025:0);});
   const blink=Math.pow(Math.max(0,Math.sin(performance.now()*.00115)),70);
   player.userData.eyes.forEach(eye=>{eye.scale.y=1-blink*.88;});
@@ -297,7 +307,9 @@ function updatePlayer(dt){
   for(const obstacle of obstacles){const p=new THREE.Vector3();obstacle.getWorldPosition(p);const radius=obstacle.geometry?.parameters?.radius||.6;const dx=player.position.x-p.x,dz=player.position.z-p.z;const min=radius+.7;if(dx*dx+dz*dz<min*min&&Math.abs(player.position.y)<1.2){const d=Math.max(.001,Math.hypot(dx,dz));player.position.x=p.x+dx/d*min;player.position.z=p.z+dz/d*min;}}
 }
 function saveProgress(){
-  progressStore.save({collected:fruits.map((fruit,index)=>fruit.userData.collected?index:null).filter(index=>index!==null),talked:companions?.talkedNames||[],portalUnlocked:portal?.unlocked,glacialMode,glacialCrystals:iceCrystals.length?iceCrystals.filter(c=>c.userData.collected).map(c=>c.userData.index):savedGlacialCrystals,mammothRescued:glacialMammoths?glacialMammoths.rescued:savedMammothRescued,cerradoMode,cerradoSeeds:cerradoSeeds.length?cerradoSeeds.filter(s=>s.userData.collected).map(s=>s.userData.index):savedCerradoSeeds,anteaterHelped,cerradoAnimals:cerradoWildlife?.observedNames||savedCerradoAnimals});
+  const saved=progressStore.save({collected:fruits.map((fruit,index)=>fruit.userData.collected?index:null).filter(index=>index!==null),talked:companions?.talkedNames||[],portalUnlocked:portal?.unlocked,glacialMode,glacialCrystals:iceCrystals.length?iceCrystals.filter(c=>c.userData.collected).map(c=>c.userData.index):savedGlacialCrystals,mammothRescued:glacialMammoths?glacialMammoths.rescued:savedMammothRescued,cerradoMode,cerradoSeeds:cerradoSeeds.length?cerradoSeeds.filter(s=>s.userData.collected).map(s=>s.userData.index):savedCerradoSeeds,anteaterHelped,cerradoAnimals:cerradoWildlife?.observedNames||savedCerradoAnimals});
+  explorationHUD?.setSaveStatus(saved?'PROGRESSO SALVO':'FALHA AO SALVAR',saved?'saved':'error');
+  return saved;
 }
 function restoreProgress(){
   const saved=progressStore.load();
@@ -358,6 +370,7 @@ function showGlacialInvitation(){
 function enterGlacialChapter(){
   if(glacialMode)return;
   glacialMode=true;
+  checkpoints.setBiome('glacial');stamina.reset();
   journal.visitBiome('glacial');recordJournal('glacial');
   saveProgress();
   document.querySelector('#dialogue').classList.add('hidden');
@@ -394,7 +407,7 @@ function scareWildlife(){
 }
 function takeDamage(){
   lives=Math.max(0,lives-1);heartsText.textContent=''.padStart(lives,'♥');
-  player.position.set(0,0,5);playerVelocity.set(0,0,0);verticalVelocity=0;
+  player.position.fromArray(checkpoints.respawn());playerVelocity.set(0,0,0);verticalVelocity=0;stamina.reset();
   if(lives===0){lives=3;heartsText.textContent='♥♥♥';showDialogue('Você descansou na cabana','Os companheiros ajudaram a capivara a se recuperar. Suas descobertas continuam salvas.');}
   else showDialogue('Cuidado com as presas!','Um lobo-das-neves alcançou você. Corra, pule ou use ASSUSTAR para se defender.');
 }
@@ -423,7 +436,7 @@ function createCerradoGate(){
 }
 function enterCerradoChapter(){
   if(cerradoMode)return;
-  glacialMode=false;cerradoMode=true;journal.visitBiome('cerrado');
+  glacialMode=false;cerradoMode=true;checkpoints.setBiome('cerrado');stamina.reset();journal.visitBiome('cerrado');
   wildlife?.dispose();wildlife=null;glacialMammoths?.dispose();glacialMammoths=null;cerradoWildlife?.dispose();cerradoWildlife=null;
   if(glacialBiome){glacialBiome.dispose();glacialBiome=null;}
   if(snowParticles){scene.remove(snowParticles);snowParticles.geometry.dispose();snowParticles.material.dispose();snowParticles=null;}
@@ -478,10 +491,11 @@ function animate(){
   if(gameSettings.showFps&&fpsElapsed>=.5){fpsValue.textContent=Math.round(fpsFrames/fpsElapsed);fpsFrames=0;fpsElapsed=0;}
   if(gameSettings.quality==='auto'&&adaptiveElapsed>=2&&renderer){adaptiveElapsed=0;const target=smoothedFrameMs>23?.88:smoothedFrameMs<16?1.035:1;const maxRatio=Math.min(devicePixelRatio,matchMedia('(pointer:coarse)').matches?1.1:1.5);const next=THREE.MathUtils.clamp(currentPixelRatio*target,maxRatio*.55,maxRatio);if(Math.abs(next-currentPixelRatio)>.025){currentPixelRatio=next;renderer.setPixelRatio(next);renderer.setSize(innerWidth,innerHeight);}}
   if(started&& !paused){updatePlayer(dt);updateCollectibles(dt);updateGlacialCollectibles(dt);updateCerradoCollectibles(dt);wildlife?.update(dt);glacialMammoths?.update(dt);companions?.update(dt);portal?.update(dt,player);cerradoWildlife?.update(dt);cerradoBiome?.update(dt,player);if(cerradoGate&&glacialMode&&!cerradoGate.userData.prompted&&player.position.distanceTo(cerradoGate.position)<3.4){cerradoGate.userData.prompted=true;showDialogue('Uma nova paisagem espera','O vale está salvo. Pressione E ou ATRAVESSAR para conhecer o Cerrado brasileiro.','ATRAVESSAR');document.querySelector('#closeDialogueBtn').onclick=enterCerradoChapter;}}
-  if(started&&!paused&&dt>0){const unlocked=journal.tick(dt,{weather:atmosphere?.weather});if(unlocked.length){const item=journal.getAll().find(entry=>entry.id===unlocked[0]);const toast=document.querySelector('#achievementToast');if(toast&&item){toast.textContent='🏆 Conquista: '+item.title;toast.classList.remove('hidden');setTimeout(()=>toast.classList.add('hidden'),3200);}refreshJournal();}}
+  if(started&&!paused&&dt>0){autosaveElapsed+=dt;if(autosaveElapsed>=12){autosaveElapsed=0;saveProgress();}const unlocked=journal.tick(dt,{weather:atmosphere?.weather});if(unlocked.length){const item=journal.getAll().find(entry=>entry.id===unlocked[0]);const toast=document.querySelector('#achievementToast');if(toast&&item){toast.textContent='🏆 Conquista: '+item.title;toast.classList.remove('hidden');setTimeout(()=>toast.classList.add('hidden'),3200);}refreshJournal();}}
   if(ambientLife&&!glacialMode&&!cerradoMode)ambientLife.update(dt,player);
   worldVisuals?.update(dt,player,glacialMode,cerradoMode);
   atmosphere?.update(dt,player,glacialMode?'glacial':cerradoMode?'cerrado':'amazon');
+  if(explorationHUD&&player){const points=[];const add=(items,color)=>items.forEach(item=>{if(!item.userData.collected&&item.visible)points.push({x:item.position.x,z:item.position.z,color});});add(fruits,'#f1c45d');add(iceCrystals,'#7ce8ff');add(cerradoSeeds,'#f3d56d');if(portal?.root?.visible)points.push({x:portal.root.position.x,z:portal.root.position.z,color:'#d99cff',size:5});explorationHUD.update({player,camera,points,heading:player.rotation.y,biome:glacialMode?'glacial':cerradoMode?'cerrado':'amazon'});}
   if(glacialMode&&snowParticles){for(let i=0;i<snowPositions.length;i++){const p=snowPositions[i];p.y-=dt*(1.4+(i%5)*.25);p.x+=Math.sin(performance.now()*.0004+i)*dt*.25;if(p.y<0)p.set(player.position.x+(Math.random()-.5)*34,12+Math.random()*8,player.position.z-Math.random()*45);snowDummy.position.copy(p);snowDummy.updateMatrix();snowParticles.setMatrixAt(i,snowDummy.matrix);}snowParticles.instanceMatrix.needsUpdate=true;}
   director.update(dt);
   renderer.render(scene,camera);
