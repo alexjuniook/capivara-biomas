@@ -55,7 +55,19 @@ export class GlacialWildlife {
       }
     }
   }
-  dispose(){ for(const enemy of this.enemies)this.scene.remove(enemy.root); this.enemies=[]; }
+  dispose(){
+    const geometries=new Set(),materials=new Set();
+    for(const enemy of this.enemies){
+      this.scene.remove(enemy.root);
+      enemy.root.traverse(child=>{
+        if(child.geometry)geometries.add(child.geometry);
+        if(child.material){for(const material of (Array.isArray(child.material)?child.material:[child.material]))materials.add(material);}
+      });
+    }
+    geometries.forEach(geometry=>geometry.dispose());
+    materials.forEach(material=>material.dispose());
+    this.enemies=[];
+  }
   scare(){
     if(this.scareCooldown>0)return false;
     this.scareCooldown=0.65;
