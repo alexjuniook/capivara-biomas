@@ -18,7 +18,16 @@ test('visual layer is connected to the game lifecycle', () => {
   assert.ok(main.includes("worldVisuals?.update(dt,player,glacialMode,cerradoMode,atmosphere?.weather||'clear')"));
 });
 
-test('grass and water respond to the world simulation', () => {\n  assert.ok(visuals.includes('this.grassData'));\n  assert.ok(visuals.includes('windStrength'));\n  assert.ok(main.includes('uRiverTime'));\n  assert.ok(main.includes('riverWave'));\n});\n\ntest('capybara has procedural coat and swimming animation', () => {\n  assert.ok(main.includes('const furCount='));\n  assert.ok(main.includes('const swimPhase='));
+test('grass and water respond to the world simulation', () => {
+  assert.ok(visuals.includes('this.grassData'));
+  assert.ok(visuals.includes('windStrength'));
+  assert.ok(main.includes('uRiverTime'));
+  assert.ok(main.includes('riverWave'));
+});
+
+test('capybara has procedural coat and swimming animation', () => {
+  assert.ok(main.includes('const furCount='));
+  assert.ok(main.includes('const swimPhase='));
   assert.ok(main.includes('userData.ears'));
   assert.ok(main.includes('userData.eyes'));
   assert.ok(main.includes('const blink='));
