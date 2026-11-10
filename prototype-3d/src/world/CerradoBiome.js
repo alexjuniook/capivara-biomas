@@ -28,8 +28,20 @@ export function buildCerradoBiome(scene, quality = 1) {
     const tree=new THREE.Group();
     const trunk=new THREE.Mesh(new THREE.CylinderGeometry(.16,.28,4.5,7),mat('#68482f'));
     trunk.position.y=2.25; tree.add(trunk);
-    const crown=new THREE.Mesh(new THREE.SphereGeometry(1.25,10,8),mat(i%3===0?'#e4b64c':i%3===1?'#d9a6bf':'#497c43'));
-    crown.position.y=4.8; crown.scale.set(1.3,.48,1.15); tree.add(crown);
+    if(i%3===0){
+      // Buriti palm: a tall trunk with radial, drooping fronds.
+      for(let f=0;f<8;f++){
+        const angle=f/8*Math.PI*2;
+        const frond=new THREE.Mesh(new THREE.ConeGeometry(.16,2.35,6),mat('#477a42'));
+        frond.position.set(Math.cos(angle)*.88,4.7+Math.sin(f*2)*.12,Math.sin(angle)*.88);
+        frond.rotation.z=Math.cos(angle)*.72;frond.rotation.x=-Math.sin(angle)*.72;tree.add(frond);
+      }
+      const fruit=new THREE.Mesh(new THREE.SphereGeometry(.34,8,7),mat('#c77d2b'));
+      fruit.position.set(0,4.05,0);fruit.scale.set(.9,1.2,.9);tree.add(fruit);
+    }else{
+      const crown=new THREE.Mesh(new THREE.SphereGeometry(1.25,10,8),mat(i%3===1?'#e4b64c':'#d9a6bf'));
+      crown.position.y=4.8;crown.scale.set(1.3,.48,1.15);tree.add(crown);
+    }
     tree.position.set(x,0,z); tree.scale.setScalar(.8+Math.random()*.65);
     tree.traverse(o=>{if(o.isMesh){o.castShadow=true;o.receiveShadow=true;}});
     add(tree);
@@ -38,6 +50,17 @@ export function buildCerradoBiome(scene, quality = 1) {
     const shrub=new THREE.Mesh(new THREE.SphereGeometry(.55+Math.random()*.5,7,6),mat(i%2?'#607d3e':'#8a9b4b'));
     shrub.position.set((Math.random()-.5)*42,.35,8-Math.random()*82);
     shrub.scale.y=.55; add(shrub);
+  }
+  // Capim-dourado tufts add a fine golden texture to open grassland.
+  const grassCount=Math.round(quality>.7?65:28);
+  for(let i=0;i<grassCount;i++){
+    const tuft=new THREE.Group();
+    for(let blade=0;blade<4;blade++){
+      const stem=new THREE.Mesh(new THREE.ConeGeometry(.045,.8+Math.random()*.45,5),mat('#c6a34f'));
+      stem.position.set((Math.random()-.5)*.28,.42, (Math.random()-.5)*.28);
+      stem.rotation.z=(Math.random()-.5)*.35;tuft.add(stem);
+    }
+    tuft.position.set((Math.random()-.5)*42,0,8-Math.random()*82);add(tuft);
   }
 
   // A friendly giant anteater marks the local rescue quest.
