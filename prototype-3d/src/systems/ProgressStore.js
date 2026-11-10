@@ -19,6 +19,7 @@ export class ProgressStore {
         cerradoSeeds: Array.isArray(progress.cerradoSeeds) ? progress.cerradoSeeds : [],
         anteaterHelped: Boolean(progress.anteaterHelped),
         cerradoAnimals: Array.isArray(progress.cerradoAnimals) ? progress.cerradoAnimals : [],
+        schemaVersion: 2,
         updatedAt: Date.now()
       }));
       return true;
