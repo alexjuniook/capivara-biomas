@@ -23,7 +23,7 @@ let renderer, scene, camera, director, player, clock, ambientLife, companions, p
 const audioAmbience = new AudioAmbience();
 let glacialMode = false, cerradoMode = false, snowParticles = null, snowDummy = null, snowPositions = [], glacialBiome = null, iceCrystals = [], glacialCrystals = 0, savedGlacialCrystals = [], savedMammothRescued = false, cerradoBiome = null, cerradoSeeds = [], cerradoSeedCount = 0, savedCerradoSeeds = [], savedAnteaterHelped = false, anteaterHelped = false, savedCerradoAnimals = [], cerradoGate = null;
 const progressStore = new ProgressStore();
-let started = false, collected = 0, lives = 3;
+let started = false, collected = 0, lives = 3, cerradoCelebrated = false;
 const keys = { forward:0, right:0, jump:false, run:false };
 const solids = [];
 const fruits = [];
@@ -163,7 +163,7 @@ function bindControls(){
   function moveStick(e){const r=area.getBoundingClientRect(),cx=r.left+r.width/2,cy=r.top+r.height/2;let dx=e.clientX-cx,dy=e.clientY-cy;const max=36,len=Math.hypot(dx,dy);if(len>max){dx=dx/len*max;dy=dy/len*max;}stick.style.transform=`translate(${dx}px,${dy}px)`;keys.right=THREE.MathUtils.clamp(dx/max,-1,1);keys.forward=THREE.MathUtils.clamp(-dy/max,-1,1);}
   const jump=document.querySelector('#jumpBtn');jump.addEventListener('pointerdown',e=>{e.preventDefault();keys.jump=true;});['pointerup','pointercancel','pointerleave'].forEach(ev=>jump.addEventListener(ev,()=>keys.jump=false));
   const run=document.querySelector('#runBtn');run.addEventListener('pointerdown',()=>keys.run=true);['pointerup','pointercancel','pointerleave'].forEach(ev=>run.addEventListener(ev,()=>keys.run=false));
-  document.querySelector('#startBtn').addEventListener('click',()=>{started=true;welcome.classList.add('hidden');audioAmbience.start();});
+  document.querySelector('#startBtn').addEventListener('click',()=>{started=true;welcome.classList.add('hidden');const audioOn=audioAmbience.start();document.querySelector('#audioBtn').textContent=audioOn?'SOM: LIGADO':'SOM INDISPONÍVEL';});
   document.querySelector('#audioBtn')?.addEventListener('click',()=>{const enabled=audioAmbience.toggle();document.querySelector('#audioBtn').textContent=enabled?'SOM: LIGADO':'SOM: DESLIGADO';});
   window.addEventListener('keydown',e=>{if(e.key.toLowerCase()==='e'&&started)interact();if(e.key.toLowerCase()==='f'&&started)scareWildlife();});
   document.querySelector('#talkBtn')?.addEventListener('click',interact);
@@ -332,7 +332,7 @@ function enterCerradoChapter(){
 function updateCerradoMission(){
   if(!cerradoMode)return;
   const seen=cerradoWildlife?.observedNames.length||savedCerradoAnimals.length;
-  if(cerradoSeedCount>=5&&anteaterHelped&&seen>=3)missionText.textContent='Vereda restaurada! Fauna registrada · Capítulo concluído';
+  if(cerradoSeedCount>=5&&anteaterHelped&&seen>=3){missionText.textContent='Vereda restaurada! Fauna registrada · Capítulo concluído';if(!cerradoCelebrated){cerradoCelebrated=true;showDialogue('O Cerrado floresceu novamente!','Você reuniu as sementes, ajudou o tamanduá-bandeira e registrou o lobo-guará, a seriema e o tatu-canastra. A jornada por estas três eras está concluída!');}}
   else if(cerradoSeedCount<5)missionText.textContent='Sementes douradas '+cerradoSeedCount+'/5 · Fauna '+seen+'/3';
   else if(!anteaterHelped)missionText.textContent='Ajude o tamanduá-bandeira · Sementes 5/5 · Fauna '+seen+'/3';
   else missionText.textContent='Observe lobo-guará, seriema e tatu-canastra · '+seen+'/3';
@@ -358,7 +358,7 @@ function updateGlacialCollectibles(dt){
 }
 function animate(){
   requestAnimationFrame(animate);const dt=Math.min(clock.getDelta(),.04);
-  if(started){updatePlayer(dt);updateCollectibles(dt);updateGlacialCollectibles(dt);updateCerradoCollectibles(dt);wildlife?.update(dt);glacialMammoths?.update(dt);companions?.update(dt);portal?.update(dt,player);cerradoWildlife?.update(dt);if(cerradoGate&&glacialMode&&!cerradoGate.userData.prompted&&player.position.distanceTo(cerradoGate.position)<3.4){cerradoGate.userData.prompted=true;showDialogue('Uma nova paisagem espera','O vale está salvo. Pressione E ou ATRAVESSAR para conhecer o Cerrado brasileiro.','ATRAVESSAR');document.querySelector('#closeDialogueBtn').onclick=enterCerradoChapter;}}
+  if(started){updatePlayer(dt);updateCollectibles(dt);updateGlacialCollectibles(dt);updateCerradoCollectibles(dt);wildlife?.update(dt);glacialMammoths?.update(dt);companions?.update(dt);portal?.update(dt,player);cerradoWildlife?.update(dt);cerradoBiome?.update(dt,player);if(cerradoGate&&glacialMode&&!cerradoGate.userData.prompted&&player.position.distanceTo(cerradoGate.position)<3.4){cerradoGate.userData.prompted=true;showDialogue('Uma nova paisagem espera','O vale está salvo. Pressione E ou ATRAVESSAR para conhecer o Cerrado brasileiro.','ATRAVESSAR');document.querySelector('#closeDialogueBtn').onclick=enterCerradoChapter;}}
   if(ambientLife&&!glacialMode&&!cerradoMode)ambientLife.update(dt,player);
   if(glacialMode&&snowParticles){for(let i=0;i<snowPositions.length;i++){const p=snowPositions[i];p.y-=dt*(1.4+(i%5)*.25);p.x+=Math.sin(performance.now()*.0004+i)*dt*.25;if(p.y<0)p.set(player.position.x+(Math.random()-.5)*34,12+Math.random()*8,player.position.z-Math.random()*45);snowDummy.position.copy(p);snowDummy.updateMatrix();snowParticles.setMatrixAt(i,snowDummy.matrix);}snowParticles.instanceMatrix.needsUpdate=true;}
   director.update(dt);
