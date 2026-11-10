@@ -6,6 +6,7 @@ import { GlacialPortal } from './world/GlacialPortal.js';
 import { buildGlacialBiome } from './world/GlacialBiome.js';
 import { ProgressStore } from './systems/ProgressStore.js';
 import { GlacialWildlife } from './characters/GlacialWildlife.js';
+import { GlacialMammoths } from './characters/GlacialMammoths.js';
 
 const viewport = document.querySelector('#viewport');
 const loading = document.querySelector('#loading');
@@ -15,7 +16,7 @@ const fruitCount = document.querySelector('#fruitCount');
 const missionText = document.querySelector('#missionText');
 const heartsText = document.querySelector('#hearts');
 
-let renderer, scene, camera, director, player, clock, ambientLife, companions, portal, wildlife;
+let renderer, scene, camera, director, player, clock, ambientLife, companions, portal, wildlife, glacialMammoths;
 let glacialMode = false, snowParticles = null, snowDummy = null, snowPositions = [], glacialBiome = null, iceCrystals = [], glacialCrystals = 0, savedGlacialCrystals = [];
 const progressStore = new ProgressStore();
 let started = false, collected = 0, lives = 3;
@@ -190,7 +191,7 @@ function updatePlayer(dt){
   for(const obstacle of obstacles){const p=new THREE.Vector3();obstacle.getWorldPosition(p);const radius=obstacle.geometry?.parameters?.radius||.6;const dx=player.position.x-p.x,dz=player.position.z-p.z;const min=radius+.7;if(dx*dx+dz*dz<min*min&&Math.abs(player.position.y)<1.2){const d=Math.max(.001,Math.hypot(dx,dz));player.position.x=p.x+dx/d*min;player.position.z=p.z+dz/d*min;}}
 }
 function saveProgress(){
-  progressStore.save({collected:fruits.map((fruit,index)=>fruit.userData.collected?index:null).filter(index=>index!==null),talked:companions?.talkedNames||[],portalUnlocked:portal?.unlocked,glacialMode,glacialCrystals:iceCrystals.length?iceCrystals.filter(c=>c.userData.collected).map(c=>c.userData.index):savedGlacialCrystals});
+  progressStore.save({collected:fruits.map((fruit,index)=>fruit.userData.collected?index:null).filter(index=>index!==null),talked:companions?.talkedNames||[],portalUnlocked:portal?.unlocked,glacialMode,glacialCrystals:iceCrystals.length?iceCrystals.filter(c=>c.userData.collected).map(c=>c.userData.index):savedGlacialCrystals,mammothRescued:glacialMammoths?.rescued||false});
 }
 function restoreProgress(){
   const saved=progressStore.load();
@@ -221,6 +222,7 @@ function showCompanionDialogue(item){
   saveProgress();
 }
 function interact(){
+  if(glacialMode&&glacialMammoths?.interact())return;
   if(companions?.interact())return;
   if(portal?.unlocked&&player.position.distanceTo(portal.root.position)<4){showGlacialInvitation();return;}
   showDialogue('A floresta está cheia de segredos','Chegue perto de Tico, Brasa ou Bento e pressione E para conversar. No celular, use o botão CONVERSAR.');
@@ -242,6 +244,10 @@ function enterGlacialChapter(){
   scene.traverse(obj=>{if(obj.isMesh&&obj.material?.color&&obj.name!=='fruto'){const color=obj.material.color;if(color.g>.28&&color.r<.5){color.lerp(new THREE.Color('#a9c5c9'),.38);}}});
   glacialBiome=buildGlacialBiome(scene,innerWidth<700?.55:1);
   wildlife=new GlacialWildlife({scene,player,onDamage:takeDamage,onDefeated:()=>showDialogue('Predador afastado!','Você conseguiu espantar o lobo-das-neves. Continue atento: ainda há outro pelo vale.')});
+  const savedMammoths=progressStore.load();
+  glacialMammoths=new GlacialMammoths({scene,player,restored:Boolean(savedMammoths.mammothRescued),onRescue:()=>{missionText.textContent='Família de Bento reunida!';saveProgress();showDialogue('A família está reunida!','O filhote encontrou sua mãe. Bento reconhece os chamados e agora sabe que não está sozinho neste mundo gelado.');}});
+  if(glacialMammoths.rescued)missionText.textContent='Família de Bento reunida!';
+  else missionText.textContent='Encontre o filhote de mamute e pressione E';
   iceCrystals=glacialBiome.crystals||[];
   iceCrystals.forEach(crystal=>{if(savedGlacialCrystals.includes(crystal.userData.index)){crystal.userData.collected=true;crystal.visible=false;}});
   glacialCrystals=iceCrystals.filter(crystal=>crystal.userData.collected).length;
@@ -287,7 +293,7 @@ function updateGlacialCollectibles(dt){
 }
 function animate(){
   requestAnimationFrame(animate);const dt=Math.min(clock.getDelta(),.04);
-  if(started){updatePlayer(dt);updateCollectibles(dt);updateGlacialCollectibles(dt);wildlife?.update(dt);companions?.update(dt);portal?.update(dt,player);}
+  if(started){updatePlayer(dt);updateCollectibles(dt);updateGlacialCollectibles(dt);wildlife?.update(dt);glacialMammoths?.update(dt);companions?.update(dt);portal?.update(dt,player);}
   if(ambientLife)ambientLife.update(dt,player);
   if(glacialMode&&snowParticles){for(let i=0;i<snowPositions.length;i++){const p=snowPositions[i];p.y-=dt*(1.4+(i%5)*.25);p.x+=Math.sin(performance.now()*.0004+i)*dt*.25;if(p.y<0)p.set(player.position.x+(Math.random()-.5)*34,12+Math.random()*8,player.position.z-Math.random()*45);snowDummy.position.copy(p);snowDummy.updateMatrix();snowParticles.setMatrixAt(i,snowDummy.matrix);}snowParticles.instanceMatrix.needsUpdate=true;}
   director.update(dt);
