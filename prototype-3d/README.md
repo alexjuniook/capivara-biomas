@@ -28,11 +28,12 @@ Depois de publicar uma prévia do branch, a página fica em `/prototype-3d/`. Pa
 - Missão de coleta dos oito frutos e portal ancestral que exige conversar com Tico para ser ativado.
 - Primeira transição jogável para a Era Glacial, com montanhas, lago congelado, pinheiros nevados, neve em movimento e missão para encontrar cinco cristais ancestrais.
 - Dois lobos-das-neves com patrulha, perseguição e ataque; a capivara pode correr, pular e assustá-los duas vezes para afastá-los. O HUD mostra vidas.
+- Família de mamutes na Era Glacial: encontre o filhote perdido e pressione E ou CONVERSAR para reuni-lo à mãe; o filhote passa a acompanhar o adulto e o resgate fica salvo.
 - Salvamento local de frutos, conversas, desbloqueio do capítulo glacial e cristais ancestrais coletados.
 
 ### Limitações conhecidas
 
-Este é um primeiro protótipo jogável, não o jogo final. A capivara ainda usa geometria procedural, sem modelo GLB nem animações profissionais; a física e as colisões são simplificadas; o sistema de vidas e progressão ainda não está completo; não há áudio, combate ou uma campanha completa. O progresso local cobre a coleta, conversas e o desbloqueio do capítulo; ainda não há sincronização entre dispositivos nem um mapa glacial com missões próprias. A transição atual é uma primeira região demonstrativa do segundo capítulo, ainda sem fauna glacial ou combate próprios; a missão atual consiste em coletar cinco cristais. Os pássaros e borboletas são elementos ambientais simples, não fauna com IA ou rotinas ecológicas completas. O protótipo depende de conexão com a internet para carregar Three.js do CDN.
+Este é um primeiro protótipo jogável, não o jogo final. A capivara ainda usa geometria procedural, sem modelo GLB nem animações profissionais; a física e as colisões são simplificadas; o sistema de vidas e progressão ainda não está completo; não há áudio, combate ou uma campanha completa. O progresso local cobre a coleta, conversas e o desbloqueio do capítulo; ainda não há sincronização entre dispositivos nem um mapa glacial com missões próprias. A transição atual é uma primeira região demonstrativa do segundo capítulo, ainda sem fauna glacial variada; há lobos-das-neves e uma família de mamutes com missão de resgate, além da coleta de cinco cristais. Os pássaros e borboletas são elementos ambientais simples, não fauna com IA ou rotinas ecológicas completas. O protótipo depende de conexão com a internet para carregar Three.js do CDN.
 
 A compatibilidade e o desempenho ainda precisam ser verificados em aparelhos reais, especialmente no Samsung A07. O branch é de desenvolvimento e não foi mesclado à produção nem implantado no Cloudflare.
 
