@@ -11,6 +11,7 @@ import { GlacialMammoths } from './characters/GlacialMammoths.js';
 import { CerradoWildlife } from './characters/CerradoWildlife.js';
 import { AudioAmbience } from './systems/AudioAmbience.js';
 import { WorldVisuals } from './world/WorldVisuals.js';
+import { GameSettings, QUALITY } from './systems/GameSettings.js';
 
 const viewport = document.querySelector('#viewport');
 const loading = document.querySelector('#loading');
@@ -24,6 +25,9 @@ let renderer, scene, camera, director, player, clock, ambientLife, companions, p
 const audioAmbience = new AudioAmbience();
 let glacialMode = false, cerradoMode = false, snowParticles = null, snowDummy = null, snowPositions = [], glacialBiome = null, iceCrystals = [], glacialCrystals = 0, savedGlacialCrystals = [], savedMammothRescued = false, cerradoBiome = null, cerradoSeeds = [], cerradoSeedCount = 0, savedCerradoSeeds = [], savedAnteaterHelped = false, anteaterHelped = false, savedCerradoAnimals = [], cerradoGate = null;
 const progressStore = new ProgressStore();
+const settingsStore = new GameSettings();
+const gameSettings = settingsStore.load();
+let paused = false, fpsFrames = 0, fpsElapsed = 0, fpsLast = performance.now(), adaptiveElapsed = 0, smoothedFrameMs = 16.7, currentPixelRatio = 1;
 let started = false, collected = 0, lives = 3, cerradoCelebrated = false;
 const keys = { forward:0, right:0, jump:false, run:false };
 const solids = [];
@@ -111,9 +115,9 @@ function makeFruit(x,z) {
 }
 function createWorld() {
   scene=new THREE.Scene();scene.background=new THREE.Color('#8ccbd3');scene.fog=new THREE.FogExp2('#a6cbb4',.012);
-  worldVisuals=new WorldVisuals(scene,innerWidth<700?.5:1);
+  worldVisuals=new WorldVisuals(scene,(innerWidth<700?.5:1)*(QUALITY[gameSettings.quality]||QUALITY.auto).visuals);
   const hemisphereLight=new THREE.HemisphereLight('#d8f2ff','#425b36',2.1);scene.add(hemisphereLight);
-  const sun=new THREE.DirectionalLight('#fff0cf',3.2);sun.position.set(-18,30,12);sun.castShadow=true;sun.shadow.mapSize.set(innerWidth>760?2048:1024,innerWidth>760?2048:1024);sun.shadow.camera.left=-35;sun.shadow.camera.right=35;sun.shadow.camera.top=35;sun.shadow.camera.bottom=-35;sun.shadow.bias=-.0002;scene.add(sun);
+  const sun=new THREE.DirectionalLight('#fff0cf',3.2);sun.position.set(-18,30,12);sun.castShadow=true;sun.shadow.mapSize.set(preset.shadowSize,preset.shadowSize);sun.shadow.camera.left=-35;sun.shadow.camera.right=35;sun.shadow.camera.top=35;sun.shadow.camera.bottom=-35;sun.shadow.bias=-.0002;scene.add(sun);
   const ground=new THREE.Mesh(new THREE.PlaneGeometry(180,180,1,1),worldVisuals.createGroundMaterial('#587a43'));ground.rotation.x=-Math.PI/2;ground.receiveShadow=true;scene.add(ground);
   const path=new THREE.Mesh(new THREE.PlaneGeometry(12,100),material('#94784d'));path.rotation.x=-Math.PI/2;path.position.set(0,.012,-20);path.receiveShadow=true;scene.add(path);
   const river=new THREE.Mesh(new THREE.PlaneGeometry(8,100),new THREE.MeshPhysicalMaterial({color:'#318eaa',roughness:.22,metalness:.05,transparent:true,opacity:.86,clearcoat:.8}));river.rotation.x=-Math.PI/2;river.position.set(13,.035,-20);scene.add(river);
@@ -140,9 +144,11 @@ function createWorld() {
 }
 function setup() {
   const touchDevice=matchMedia('(pointer:coarse)').matches;
-  renderer=new THREE.WebGLRenderer({antialias:innerWidth>760&&!touchDevice,alpha:false,powerPreference:'low-power'});
-  renderer.setPixelRatio(Math.min(devicePixelRatio,touchDevice?1.1:1.5));renderer.setSize(innerWidth,innerHeight);
-  renderer.shadowMap.enabled=innerWidth>760&&!touchDevice;renderer.shadowMap.type=THREE.PCFSoftShadowMap;
+  renderer=new THREE.WebGLRenderer({antialias:innerWidth>760&&!touchDevice&&gameSettings.quality!=='low',alpha:false,powerPreference:'high-performance'});
+  const preset=QUALITY[gameSettings.quality]||QUALITY.auto;
+  currentPixelRatio=Math.min(devicePixelRatio,touchDevice?1.1:1.5)*preset.pixelRatio;
+  renderer.setPixelRatio(currentPixelRatio);renderer.setSize(innerWidth,innerHeight);
+  renderer.shadowMap.enabled=preset.shadows&&innerWidth>760&&!touchDevice;renderer.shadowMap.type=THREE.PCFSoftShadowMap;
   renderer.outputColorSpace=THREE.SRGBColorSpace;renderer.toneMapping=THREE.ACESFilmicToneMapping;renderer.toneMappingExposure=1.15;
   viewport.appendChild(renderer.domElement);
   camera=new THREE.PerspectiveCamera(62,innerWidth/innerHeight,.1,180);
@@ -154,9 +160,27 @@ function setup() {
   window.addEventListener('resize',resize);
   loading.classList.add('hidden');welcome.classList.remove('hidden');
 }
-function resize(){if(!renderer||!camera)return;camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();const touchDevice=matchMedia('(pointer:coarse)').matches;renderer.setPixelRatio(Math.min(devicePixelRatio,touchDevice?1.1:1.5));renderer.setSize(innerWidth,innerHeight);}
+function resize(){if(!renderer||!camera)return;camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();const touchDevice=matchMedia('(pointer:coarse)').matches;const preset=QUALITY[gameSettings.quality]||QUALITY.auto;currentPixelRatio=Math.min(devicePixelRatio,touchDevice?1.1:1.5)*preset.pixelRatio;renderer.setPixelRatio(currentPixelRatio);renderer.setSize(innerWidth,innerHeight);}
 function setCameraMode(mode){director.setMode(mode);document.querySelectorAll('[data-camera]').forEach(b=>b.classList.toggle('selected',b.dataset.camera===mode));}
 function bindControls(){
+  const settingsPanel=document.querySelector('#settingsPanel');
+  const settingsBtn=document.querySelector('#settingsBtn');
+  const fpsMeter=document.querySelector('#fpsMeter');
+  const fpsValue=document.querySelector('#fpsValue');
+  const qualitySelect=document.querySelector('#qualitySelect');
+  qualitySelect.value=gameSettings.quality;
+  const persistSettings=()=>settingsStore.save(gameSettings);
+  const showSettings=visible=>{settingsPanel.classList.toggle('hidden',!visible);settingsBtn.setAttribute('aria-expanded',String(visible));};
+  settingsBtn.addEventListener('click',()=>showSettings(settingsPanel.classList.contains('hidden')));
+  document.querySelector('#closeSettingsBtn').addEventListener('click',()=>showSettings(false));
+  qualitySelect.addEventListener('change',()=>{gameSettings.quality=qualitySelect.value;persistSettings();const preset=QUALITY[gameSettings.quality]||QUALITY.auto;renderer.shadowMap.enabled=preset.shadows&&innerWidth>760&&!matchMedia('(pointer:coarse)').matches;renderer.setPixelRatio(Math.min(devicePixelRatio,matchMedia('(pointer:coarse)').matches?1.1:1.5)*preset.pixelRatio);currentPixelRatio=renderer.getPixelRatio();showDialogue('Gráficos atualizados','A nova qualidade será aplicada ao renderizador. Para reconstruir todos os detalhes do cenário, recarregue o jogo.');});
+  document.querySelector('#pauseBtn').addEventListener('click',e=>{paused=!paused;e.currentTarget.textContent=paused?'CONTINUAR':'PAUSAR';clearMovementInput();if(paused)showDialogue('Jogo pausado','A aventura está em pausa. Pressione CONTINUAR nas configurações para voltar.');else document.querySelector('#dialogue').classList.add('hidden');});
+  document.querySelector('#hudBtn').addEventListener('click',e=>{gameSettings.showHud=!gameSettings.showHud;document.querySelectorAll('.hud,.mission,.camera-panel,.touch-ui').forEach(el=>el.classList.toggle('hud-hidden',!gameSettings.showHud));e.currentTarget.textContent=gameSettings.showHud?'OCULTAR HUD':'MOSTRAR HUD';persistSettings();});
+  document.querySelector('#fpsBtn').addEventListener('click',e=>{gameSettings.showFps=!gameSettings.showFps;fpsMeter.classList.toggle('hidden',!gameSettings.showFps);e.currentTarget.textContent=gameSettings.showFps?'OCULTAR FPS':'MOSTRAR FPS';persistSettings();});
+  if(!gameSettings.showHud)document.querySelectorAll('.hud,.mission,.camera-panel,.touch-ui').forEach(el=>el.classList.add('hud-hidden'));
+  document.querySelector('#hudBtn').textContent=gameSettings.showHud?'OCULTAR HUD':'MOSTRAR HUD';
+  fpsMeter.classList.toggle('hidden',!gameSettings.showFps);
+  document.querySelector('#fpsBtn').textContent=gameSettings.showFps?'OCULTAR FPS':'MOSTRAR FPS';
   document.querySelectorAll('[data-camera]').forEach(b=>b.addEventListener('click',()=>setCameraMode(b.dataset.camera)));
   window.addEventListener('keydown',e=>{if(['ArrowUp','ArrowDown','ArrowLeft','ArrowRight',' '].includes(e.key))e.preventDefault();if(e.key==='w'||e.key==='ArrowUp')keys.forward=1;if(e.key==='s'||e.key==='ArrowDown')keys.forward=-1;if(e.key==='a'||e.key==='ArrowLeft')keys.right=-1;if(e.key==='d'||e.key==='ArrowRight')keys.right=1;if(e.key==='Shift')keys.run=true;if(e.key===' '&&!e.repeat)keys.jump=true;});
   window.addEventListener('keyup',e=>{if(e.key==='w'||e.key==='ArrowUp'||e.key==='s'||e.key==='ArrowDown')keys.forward=0;if(e.key==='a'||e.key==='ArrowLeft'||e.key==='d'||e.key==='ArrowRight')keys.right=0;if(e.key==='Shift')keys.run=false;if(e.key===' ')keys.jump=false;});
@@ -381,8 +405,13 @@ function updateGlacialCollectibles(dt){
   }
 }
 function animate(){
-  requestAnimationFrame(animate);const dt=document.hidden?0:Math.min(clock.getDelta(),.04);
-  if(started){updatePlayer(dt);updateCollectibles(dt);updateGlacialCollectibles(dt);updateCerradoCollectibles(dt);wildlife?.update(dt);glacialMammoths?.update(dt);companions?.update(dt);portal?.update(dt,player);cerradoWildlife?.update(dt);cerradoBiome?.update(dt,player);if(cerradoGate&&glacialMode&&!cerradoGate.userData.prompted&&player.position.distanceTo(cerradoGate.position)<3.4){cerradoGate.userData.prompted=true;showDialogue('Uma nova paisagem espera','O vale está salvo. Pressione E ou ATRAVESSAR para conhecer o Cerrado brasileiro.','ATRAVESSAR');document.querySelector('#closeDialogueBtn').onclick=enterCerradoChapter;}}
+  requestAnimationFrame(animate);
+  const rawDelta=document.hidden||paused?0:Math.min(clock.getDelta(),.05);
+  const dt=rawDelta;
+  if(rawDelta>0){smoothedFrameMs=smoothedFrameMs*.9+rawDelta*1000*.1;fpsFrames++;fpsElapsed+=rawDelta;adaptiveElapsed+=rawDelta;}
+  if(gameSettings.showFps&&fpsElapsed>=.5){fpsValue.textContent=Math.round(fpsFrames/fpsElapsed);fpsFrames=0;fpsElapsed=0;}
+  if(gameSettings.quality==='auto'&&adaptiveElapsed>=2&&renderer){adaptiveElapsed=0;const target=smoothedFrameMs>23?.88:smoothedFrameMs<16?.1.035:1;const maxRatio=Math.min(devicePixelRatio,matchMedia('(pointer:coarse)').matches?1.1:1.5);const next=THREE.MathUtils.clamp(currentPixelRatio*target,maxRatio*.55,maxRatio);if(Math.abs(next-currentPixelRatio)>.025){currentPixelRatio=next;renderer.setPixelRatio(next);renderer.setSize(innerWidth,innerHeight);}}
+  if(started&& !paused){updatePlayer(dt);updateCollectibles(dt);updateGlacialCollectibles(dt);updateCerradoCollectibles(dt);wildlife?.update(dt);glacialMammoths?.update(dt);companions?.update(dt);portal?.update(dt,player);cerradoWildlife?.update(dt);cerradoBiome?.update(dt,player);if(cerradoGate&&glacialMode&&!cerradoGate.userData.prompted&&player.position.distanceTo(cerradoGate.position)<3.4){cerradoGate.userData.prompted=true;showDialogue('Uma nova paisagem espera','O vale está salvo. Pressione E ou ATRAVESSAR para conhecer o Cerrado brasileiro.','ATRAVESSAR');document.querySelector('#closeDialogueBtn').onclick=enterCerradoChapter;}}
   if(ambientLife&&!glacialMode&&!cerradoMode)ambientLife.update(dt,player);
   worldVisuals?.update(dt,player,glacialMode,cerradoMode);
   if(glacialMode&&snowParticles){for(let i=0;i<snowPositions.length;i++){const p=snowPositions[i];p.y-=dt*(1.4+(i%5)*.25);p.x+=Math.sin(performance.now()*.0004+i)*dt*.25;if(p.y<0)p.set(player.position.x+(Math.random()-.5)*34,12+Math.random()*8,player.position.z-Math.random()*45);snowDummy.position.copy(p);snowDummy.updateMatrix();snowParticles.setMatrixAt(i,snowDummy.matrix);}snowParticles.instanceMatrix.needsUpdate=true;}
