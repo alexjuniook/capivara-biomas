@@ -346,7 +346,7 @@ function updateCerradoMission(){
 }
 function updateCerradoCollectibles(dt){
   if(!cerradoMode||!cerradoSeeds.length)return;
-  for(const seed of cerradoSeeds){if(seed.userData.collected)continue;seed.rotation.y+=dt*.9;seed.position.y=seed.userData.baseY+Math.sin(performance.now()*.002+seed.userData.index)*.13;if(seed.position.distanceTo(player.position.clone().add(new THREE.Vector3(0,1,0)))<1.7){seed.userData.collected=true;seed.visible=false;cerradoSeedCount++;updateCerradoMission();saveProgress();if(cerradoSeedCount===5)showDialogue('As sementes douradas reunidas!','A vereda começa a florescer novamente. Falta ajudar o tamanduá-bandeira para concluir este capítulo.');}}
+  for(const seed of cerradoSeeds){if(seed.userData.collected)continue;seed.rotation.y+=dt*.9;seed.position.y=seed.userData.baseY+Math.sin(performance.now()*.002+seed.userData.index)*.13;if(seed.position.distanceTo(player.position.clone().add(new THREE.Vector3(0,1,0)))<1.7){seed.userData.collected=true;seed.visible=false;cerradoSeedCount++;updateCerradoMission();saveProgress();if(cerradoSeedCount===5&&!(anteaterHelped&&(cerradoWildlife?.observedNames.length||savedCerradoAnimals.length)>=3))showDialogue('As sementes douradas reunidas!','A vereda começa a florescer novamente. Falta ajudar o tamanduá-bandeira e registrar a fauna para concluir este capítulo.');}}
 }
 function updateGlacialCollectibles(dt){
   if(!glacialMode||!iceCrystals.length)return;
