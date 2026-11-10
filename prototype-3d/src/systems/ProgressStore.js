@@ -17,7 +17,8 @@ export class ProgressStore {
         mammothRescued: Boolean(progress.mammothRescued),
         cerradoMode: Boolean(progress.cerradoMode),
         cerradoSeeds: Array.isArray(progress.cerradoSeeds) ? progress.cerradoSeeds : [],
-        anteaterHelped: Boolean(progress.anteaterHelped),\n        cerradoAnimals: Array.isArray(progress.cerradoAnimals) ? progress.cerradoAnimals : [],
+        anteaterHelped: Boolean(progress.anteaterHelped),
+        cerradoAnimals: Array.isArray(progress.cerradoAnimals) ? progress.cerradoAnimals : [],
         updatedAt: Date.now()
       }));
       return true;
