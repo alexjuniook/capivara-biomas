@@ -59,5 +59,17 @@ export function buildGlacialBiome(scene, quality = 1) {
     scene.add(shard); added.push(shard);
   }
 
-  return { dispose() { for (const object of added) scene.remove(object); } };
+  const crystals = [];
+  const crystalMaterial = new THREE.MeshPhysicalMaterial({color:'#a8f2ff',emissive:'#247f9b',emissiveIntensity:0.75,roughness:0.18,metalness:0.12,transparent:true,opacity:0.96,clearcoat:1});
+  const crystalSpots = [[-4,-15],[5,-27],[-7,-39],[8,-53],[-2,-68]];
+  crystalSpots.forEach(([x,z],index)=>{
+    const group=new THREE.Group();
+    const shard=new THREE.Mesh(new THREE.OctahedronGeometry(0.72,0),crystalMaterial);
+    shard.scale.set(0.72,1.65,0.72);shard.position.y=1.25;shard.castShadow=true;group.add(shard);
+    const glow=new THREE.Mesh(new THREE.TorusGeometry(0.72,0.045,6,24),new THREE.MeshBasicMaterial({color:'#baf7ff'}));
+    glow.rotation.x=Math.PI/2;glow.position.y=0.22;group.add(glow);
+    group.position.set(x,0,z);group.userData.index=index;group.userData.baseY=0;
+    scene.add(group);added.push(group);crystals.push(group);
+  });
+  return { crystals, dispose() { for (const object of added) scene.remove(object); } };
 }
