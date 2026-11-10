@@ -114,6 +114,7 @@ function makeFruit(x,z) {
   group.userData.baseY=.95;group.userData.collected=false;fruits.push(group);
 }
 function createWorld() {
+  const preset=QUALITY[gameSettings.quality]||QUALITY.auto;
   scene=new THREE.Scene();scene.background=new THREE.Color('#8ccbd3');scene.fog=new THREE.FogExp2('#a6cbb4',.012);
   worldVisuals=new WorldVisuals(scene,(innerWidth<700?.5:1)*(QUALITY[gameSettings.quality]||QUALITY.auto).visuals);
   const hemisphereLight=new THREE.HemisphereLight('#d8f2ff','#425b36',2.1);scene.add(hemisphereLight);
@@ -410,7 +411,7 @@ function animate(){
   const dt=rawDelta;
   if(rawDelta>0){smoothedFrameMs=smoothedFrameMs*.9+rawDelta*1000*.1;fpsFrames++;fpsElapsed+=rawDelta;adaptiveElapsed+=rawDelta;}
   if(gameSettings.showFps&&fpsElapsed>=.5){fpsValue.textContent=Math.round(fpsFrames/fpsElapsed);fpsFrames=0;fpsElapsed=0;}
-  if(gameSettings.quality==='auto'&&adaptiveElapsed>=2&&renderer){adaptiveElapsed=0;const target=smoothedFrameMs>23?.88:smoothedFrameMs<16?.1.035:1;const maxRatio=Math.min(devicePixelRatio,matchMedia('(pointer:coarse)').matches?1.1:1.5);const next=THREE.MathUtils.clamp(currentPixelRatio*target,maxRatio*.55,maxRatio);if(Math.abs(next-currentPixelRatio)>.025){currentPixelRatio=next;renderer.setPixelRatio(next);renderer.setSize(innerWidth,innerHeight);}}
+  if(gameSettings.quality==='auto'&&adaptiveElapsed>=2&&renderer){adaptiveElapsed=0;const target=smoothedFrameMs>23?.88:smoothedFrameMs<16?1.035:1;const maxRatio=Math.min(devicePixelRatio,matchMedia('(pointer:coarse)').matches?1.1:1.5);const next=THREE.MathUtils.clamp(currentPixelRatio*target,maxRatio*.55,maxRatio);if(Math.abs(next-currentPixelRatio)>.025){currentPixelRatio=next;renderer.setPixelRatio(next);renderer.setSize(innerWidth,innerHeight);}}
   if(started&& !paused){updatePlayer(dt);updateCollectibles(dt);updateGlacialCollectibles(dt);updateCerradoCollectibles(dt);wildlife?.update(dt);glacialMammoths?.update(dt);companions?.update(dt);portal?.update(dt,player);cerradoWildlife?.update(dt);cerradoBiome?.update(dt,player);if(cerradoGate&&glacialMode&&!cerradoGate.userData.prompted&&player.position.distanceTo(cerradoGate.position)<3.4){cerradoGate.userData.prompted=true;showDialogue('Uma nova paisagem espera','O vale está salvo. Pressione E ou ATRAVESSAR para conhecer o Cerrado brasileiro.','ATRAVESSAR');document.querySelector('#closeDialogueBtn').onclick=enterCerradoChapter;}}
   if(ambientLife&&!glacialMode&&!cerradoMode)ambientLife.update(dt,player);
   worldVisuals?.update(dt,player,glacialMode,cerradoMode);
