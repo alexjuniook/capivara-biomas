@@ -32,6 +32,7 @@ const up = new THREE.Vector3(0,1,0);
 const forward = new THREE.Vector3();
 const right = new THREE.Vector3();
 const move = new THREE.Vector3();
+const playerVelocity = new THREE.Vector3();
 let verticalVelocity = 0, grounded = true, jumpWasDown = false;
 let walkTime = 0;
 
@@ -149,13 +150,14 @@ function setup() {
   window.addEventListener('resize',resize);
   loading.classList.add('hidden');welcome.classList.remove('hidden');
 }
-function resize(){if(!renderer||!camera)return;camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();renderer.setPixelRatio(Math.min(devicePixelRatio,1.5));renderer.setSize(innerWidth,innerHeight);}
+function resize(){if(!renderer||!camera)return;camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();const touchDevice=matchMedia('(pointer:coarse)').matches;renderer.setPixelRatio(Math.min(devicePixelRatio,touchDevice?1.1:1.5));renderer.setSize(innerWidth,innerHeight);}
 function setCameraMode(mode){director.setMode(mode);document.querySelectorAll('[data-camera]').forEach(b=>b.classList.toggle('selected',b.dataset.camera===mode));}
 function bindControls(){
   document.querySelectorAll('[data-camera]').forEach(b=>b.addEventListener('click',()=>setCameraMode(b.dataset.camera)));
   window.addEventListener('keydown',e=>{if(['ArrowUp','ArrowDown','ArrowLeft','ArrowRight',' '].includes(e.key))e.preventDefault();if(e.key==='w'||e.key==='ArrowUp')keys.forward=1;if(e.key==='s'||e.key==='ArrowDown')keys.forward=-1;if(e.key==='a'||e.key==='ArrowLeft')keys.right=-1;if(e.key==='d'||e.key==='ArrowRight')keys.right=1;if(e.key==='Shift')keys.run=true;if(e.key===' '&&!e.repeat)keys.jump=true;});
   window.addEventListener('keyup',e=>{if(e.key==='w'||e.key==='ArrowUp'||e.key==='s'||e.key==='ArrowDown')keys.forward=0;if(e.key==='a'||e.key==='ArrowLeft'||e.key==='d'||e.key==='ArrowRight')keys.right=0;if(e.key==='Shift')keys.run=false;if(e.key===' ')keys.jump=false;});
-  window.addEventListener('blur',()=>{keys.forward=0;keys.right=0;keys.run=false;keys.jump=false;});
+  window.addEventListener('blur',clearMovementInput);
+  document.addEventListener('visibilitychange',()=>{if(document.hidden)clearMovementInput();});
   const stick=document.querySelector('#stick'),area=document.querySelector('.stick-area');let pointer=null;
   area.addEventListener('pointerdown',e=>{pointer=e.pointerId;area.setPointerCapture(pointer);moveStick(e);});
   area.addEventListener('pointermove',e=>{if(pointer===e.pointerId)moveStick(e);});
@@ -179,8 +181,11 @@ function updatePlayer(dt){
   if(move.lengthSq()>1)move.normalize();
   const speed=keys.run?7.1:4.2;
   const desiredX=move.x*speed,desiredZ=move.z*speed;
-  player.position.x=THREE.MathUtils.damp(player.position.x,player.position.x+desiredX*dt,keys.forward||keys.right?10:5,dt);
-  player.position.z=THREE.MathUtils.damp(player.position.z,player.position.z+desiredZ*dt,keys.forward||keys.right?10:5,dt);
+  const response=keys.forward||keys.right?12:8;
+  playerVelocity.x=THREE.MathUtils.damp(playerVelocity.x,desiredX,response,dt);
+  playerVelocity.z=THREE.MathUtils.damp(playerVelocity.z,desiredZ,response,dt);
+  player.position.x+=playerVelocity.x*dt;
+  player.position.z+=playerVelocity.z*dt;
   player.position.x=THREE.MathUtils.clamp(player.position.x,-10,10);
   player.position.z=THREE.MathUtils.clamp(player.position.z,-78,11);
   if(move.lengthSq()>.02){const angle=Math.atan2(-move.z,move.x);player.rotation.y=THREE.MathUtils.damp(player.rotation.y,angle,10,dt);}
@@ -218,7 +223,9 @@ function restoreProgress(){
   else if(collected>0)missionText.textContent='Continue sua jornada pela floresta';
   if(saved.glacialMode||saved.cerradoMode){portal?.unlock();enterGlacialChapter();if(saved.cerradoMode)enterCerradoChapter();}
 }
+function clearMovementInput(){keys.forward=0;keys.right=0;keys.jump=false;keys.run=false;playerVelocity.set(0,0,0);}
 function showDialogue(title, message, button='CONTINUAR') {
+  clearMovementInput();
   const panel=document.querySelector('#dialogue');
   document.querySelector('#dialogueTitle').textContent=title;
   document.querySelector('#dialogueText').textContent=message;
@@ -233,6 +240,7 @@ function showCompanionDialogue(item){
   saveProgress();
 }
 function interact(){
+  if(document.querySelector('#dialogue')?.classList.contains('hidden')===false)return;
   if(glacialMode&&cerradoGate&&player.position.distanceTo(cerradoGate.position)<4){showDialogue('Portal dourado','O vale foi salvo. Atravesse para conhecer o Cerrado brasileiro.','ATRAVESSAR');document.querySelector('#closeDialogueBtn').onclick=enterCerradoChapter;return;}
   if(glacialMode&&glacialMammoths?.interact())return;
   if(cerradoMode&&cerradoBiome?.anteater.position.distanceTo(player.position)<3.8){
@@ -249,7 +257,7 @@ function interact(){
 }
 function showGlacialInvitation(){
   if(!portal?.unlocked){showDialogue('Portal adormecido','A passagem só desperta quando os oito frutos forem encontrados e Tico revelar o caminho.');return;}
-  showDialogue('O segredo das duas eras','O portal despertou! Do outro lado existe um mundo de gelo, mamutes e aventuras que ninguém desta floresta conhece. Pressione ENTRAR NA ERA GLACIAL para atravessar.','ENTRAR NA ERA GLACIAL');
+  showDialogue('O segredo das três eras','O portal despertou! Do outro lado existe um mundo de gelo, mamutes e novas aventuras. Pressione ENTRAR NA ERA GLACIAL para atravessar.','ENTRAR NA ERA GLACIAL');
   document.querySelector('#closeDialogueBtn').onclick=enterGlacialChapter;
 }
 function enterGlacialChapter(){
@@ -290,14 +298,15 @@ function scareWildlife(){
 }
 function takeDamage(){
   lives=Math.max(0,lives-1);heartsText.textContent=''.padStart(lives,'♥');
-  player.position.set(0,0,5);
+  player.position.set(0,0,5);playerVelocity.set(0,0,0);verticalVelocity=0;
   if(lives===0){lives=3;heartsText.textContent='♥♥♥';showDialogue('Você descansou na cabana','Os companheiros ajudaram a capivara a se recuperar. Suas descobertas continuam salvas.');}
   else showDialogue('Cuidado com as presas!','Um lobo-das-neves alcançou você. Corra, pule ou use ASSUSTAR para se defender.');
 }
 function updateGlacialMission(){
   if(!glacialMode)return;
   if(glacialCrystals>=5&&glacialMammoths?.rescued){
-    missionText.textContent='Vale salvo! As duas missões foram concluídas';
+    missionText.textContent='Vale salvo! Portal dourado desbloqueado';
+    createCerradoGate();
     return;
   }
   if(!glacialMammoths?.rescued){
@@ -321,7 +330,7 @@ function enterCerradoChapter(){
   wildlife?.dispose();wildlife=null;glacialMammoths?.dispose();glacialMammoths=null;cerradoWildlife?.dispose();cerradoWildlife=null;
   if(glacialBiome){glacialBiome.dispose();glacialBiome=null;}
   if(snowParticles){scene.remove(snowParticles);snowParticles.geometry.dispose();snowParticles.material.dispose();snowParticles=null;}
-  if(cerradoGate){scene.remove(cerradoGate);cerradoGate=null;}
+  if(cerradoGate){scene.remove(cerradoGate);cerradoGate.traverse(o=>{o.geometry?.dispose();if(o.material){for(const m of (Array.isArray(o.material)?o.material:[o.material]))m.dispose();}});cerradoGate=null;}
   scene.background.set('#e9c98d');scene.fog.color.set('#d7b77f');scene.fog.density=.009;
   cerradoBiome=buildCerradoBiome(scene,innerWidth<700?.55:1);
   cerradoWildlife=new CerradoWildlife({scene,player,onObserve:({animal,repeat})=>{savedCerradoAnimals=cerradoWildlife.observedNames;showDialogue(animal.species+' · '+animal.name,repeat?'Você já registrou este encontro. Observe os outros animais para completar o diário da fauna.':animal.species==='Lobo-guará'?'O lobo-guará é um canídeo de pernas longas, típico do Cerrado. Observe sem perseguir e respeite seu espaço.':animal.species==='Seriema'?'A seriema percorre o campo a pé e corre muito rápido. Você registrou mais uma espécie no diário.':'O tatu-canastra é discreto e escava tocas. Você registrou mais uma espécie no diário.');updateCerradoMission();saveProgress();}});
@@ -330,7 +339,7 @@ function enterCerradoChapter(){
   cerradoSeeds.forEach(seed=>{if(savedCerradoSeeds.includes(seed.userData.index)){seed.userData.collected=true;seed.visible=false;}});
   cerradoSeedCount=cerradoSeeds.filter(seed=>seed.userData.collected).length;
   anteaterHelped=savedAnteaterHelped;
-  player.position.set(0,0,5);
+  player.position.set(0,0,5);playerVelocity.set(0,0,0);verticalVelocity=0;
   document.querySelector('.brand small').textContent='Capítulo 3 · Cerrado brasileiro';
   document.querySelector('#iceStat')?.classList.add('hidden');
   document.querySelector('#fruitStat')?.classList.add('hidden');
@@ -365,7 +374,7 @@ function updateGlacialCollectibles(dt){
   }
 }
 function animate(){
-  requestAnimationFrame(animate);const dt=Math.min(clock.getDelta(),.04);
+  requestAnimationFrame(animate);const dt=document.hidden?0:Math.min(clock.getDelta(),.04);
   if(started){updatePlayer(dt);updateCollectibles(dt);updateGlacialCollectibles(dt);updateCerradoCollectibles(dt);wildlife?.update(dt);glacialMammoths?.update(dt);companions?.update(dt);portal?.update(dt,player);cerradoWildlife?.update(dt);cerradoBiome?.update(dt,player);if(cerradoGate&&glacialMode&&!cerradoGate.userData.prompted&&player.position.distanceTo(cerradoGate.position)<3.4){cerradoGate.userData.prompted=true;showDialogue('Uma nova paisagem espera','O vale está salvo. Pressione E ou ATRAVESSAR para conhecer o Cerrado brasileiro.','ATRAVESSAR');document.querySelector('#closeDialogueBtn').onclick=enterCerradoChapter;}}
   if(ambientLife&&!glacialMode&&!cerradoMode)ambientLife.update(dt,player);
   if(glacialMode&&snowParticles){for(let i=0;i<snowPositions.length;i++){const p=snowPositions[i];p.y-=dt*(1.4+(i%5)*.25);p.x+=Math.sin(performance.now()*.0004+i)*dt*.25;if(p.y<0)p.set(player.position.x+(Math.random()-.5)*34,12+Math.random()*8,player.position.z-Math.random()*45);snowDummy.position.copy(p);snowDummy.updateMatrix();snowParticles.setMatrixAt(i,snowDummy.matrix);}snowParticles.instanceMatrix.needsUpdate=true;}
