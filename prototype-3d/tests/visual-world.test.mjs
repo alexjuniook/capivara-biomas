@@ -15,7 +15,7 @@ test('world visuals include the 15-piece procedural art upgrade', () => {
 
 test('visual layer is connected to the game lifecycle', () => {
   assert.ok(main.includes('new WorldVisuals('));
-  assert.ok(main.includes('worldVisuals?.update(dt,player,glacialMode,cerradoMode,atmosphere?.weather||'clear')'));
+  assert.ok(main.includes("worldVisuals?.update(dt,player,glacialMode,cerradoMode,atmosphere?.weather||'clear')"));
 });
 
 test('grass and water respond to the world simulation', () => {\n  assert.ok(visuals.includes('this.grassData'));\n  assert.ok(visuals.includes('windStrength'));\n  assert.ok(main.includes('uRiverTime'));\n  assert.ok(main.includes('riverWave'));\n});\n\ntest('capybara has procedural coat and swimming animation', () => {\n  assert.ok(main.includes('const furCount='));\n  assert.ok(main.includes('const swimPhase='));
