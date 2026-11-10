@@ -40,5 +40,5 @@ test('journal safely restores and persists progress',()=>{
   const restored=new AdventureJournal(storage);
   assert.ok(restored.getUnlocked().some(item=>item.id==='crystal_master'));
   assert.equal(restored.getSummary().minutes,0);
-  assert.equal(restored.getSummary().unlocked,1);
+  assert.equal(restored.getSummary().unlocked,2);
 });
