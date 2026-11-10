@@ -11,6 +11,7 @@ import { GlacialMammoths } from './characters/GlacialMammoths.js';
 import { CerradoWildlife } from './characters/CerradoWildlife.js';
 import { AudioAmbience } from './systems/AudioAmbience.js';
 import { WorldVisuals } from './world/WorldVisuals.js';
+import { WorldAtmosphere } from './world/WorldAtmosphere.js';
 import { GameSettings, QUALITY } from './systems/GameSettings.js';
 
 const viewport = document.querySelector('#viewport');
@@ -21,7 +22,7 @@ const fruitCount = document.querySelector('#fruitCount');
 const missionText = document.querySelector('#missionText');
 const heartsText = document.querySelector('#hearts');
 
-let renderer, scene, camera, director, player, clock, ambientLife, companions, portal, wildlife, glacialMammoths, cerradoWildlife, worldVisuals;
+let renderer, scene, camera, director, player, clock, ambientLife, companions, portal, wildlife, glacialMammoths, cerradoWildlife, worldVisuals, atmosphere;
 const audioAmbience = new AudioAmbience();
 let glacialMode = false, cerradoMode = false, snowParticles = null, snowDummy = null, snowPositions = [], glacialBiome = null, iceCrystals = [], glacialCrystals = 0, savedGlacialCrystals = [], savedMammothRescued = false, cerradoBiome = null, cerradoSeeds = [], cerradoSeedCount = 0, savedCerradoSeeds = [], savedAnteaterHelped = false, anteaterHelped = false, savedCerradoAnimals = [], cerradoGate = null;
 const progressStore = new ProgressStore();
@@ -122,6 +123,7 @@ function createWorld() {
   worldVisuals=new WorldVisuals(scene,(innerWidth<700?.5:1)*(QUALITY[gameSettings.quality]||QUALITY.auto).visuals);
   const hemisphereLight=new THREE.HemisphereLight('#d8f2ff','#425b36',2.1);scene.add(hemisphereLight);
   const sun=new THREE.DirectionalLight('#fff0cf',3.2);sun.position.set(-18,30,12);sun.castShadow=true;sun.shadow.mapSize.set(preset.shadowSize,preset.shadowSize);sun.shadow.camera.left=-35;sun.shadow.camera.right=35;sun.shadow.camera.top=35;sun.shadow.camera.bottom=-35;sun.shadow.bias=-.0002;scene.add(sun);
+  atmosphere=new WorldAtmosphere({scene,sun,hemisphere:hemisphereLight,quality:preset.visuals,weatherLabel:document.querySelector('#weatherLabel')});
   const ground=new THREE.Mesh(new THREE.PlaneGeometry(180,180,1,1),worldVisuals.createGroundMaterial('#587a43'));ground.rotation.x=-Math.PI/2;ground.receiveShadow=true;scene.add(ground);
   const path=new THREE.Mesh(new THREE.PlaneGeometry(12,100),material('#94784d'));path.rotation.x=-Math.PI/2;path.position.set(0,.012,-20);path.receiveShadow=true;scene.add(path);
   const river=new THREE.Mesh(new THREE.PlaneGeometry(8,100),new THREE.MeshPhysicalMaterial({color:'#318eaa',roughness:.22,metalness:.05,transparent:true,opacity:.86,clearcoat:.8}));river.rotation.x=-Math.PI/2;river.position.set(13,.035,-20);scene.add(river);
@@ -164,6 +166,7 @@ function setup() {
   restoreProgress();
   clock=new THREE.Clock();
   window.addEventListener('resize',resize);
+  window.addEventListener('pagehide',()=>{audioAmbience.dispose();atmosphere?.dispose();director?.dispose();},{once:true});
   loading.classList.add('hidden');welcome.classList.remove('hidden');
 }
 function resize(){if(!renderer||!camera)return;camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();const touchDevice=matchMedia('(pointer:coarse)').matches;const preset=QUALITY[gameSettings.quality]||QUALITY.auto;currentPixelRatio=Math.min(devicePixelRatio,touchDevice?1.1:1.5)*preset.pixelRatio;renderer.setPixelRatio(currentPixelRatio);renderer.setSize(innerWidth,innerHeight);}
@@ -456,6 +459,7 @@ function animate(){
   if(started&& !paused){updatePlayer(dt);updateCollectibles(dt);updateGlacialCollectibles(dt);updateCerradoCollectibles(dt);wildlife?.update(dt);glacialMammoths?.update(dt);companions?.update(dt);portal?.update(dt,player);cerradoWildlife?.update(dt);cerradoBiome?.update(dt,player);if(cerradoGate&&glacialMode&&!cerradoGate.userData.prompted&&player.position.distanceTo(cerradoGate.position)<3.4){cerradoGate.userData.prompted=true;showDialogue('Uma nova paisagem espera','O vale está salvo. Pressione E ou ATRAVESSAR para conhecer o Cerrado brasileiro.','ATRAVESSAR');document.querySelector('#closeDialogueBtn').onclick=enterCerradoChapter;}}
   if(ambientLife&&!glacialMode&&!cerradoMode)ambientLife.update(dt,player);
   worldVisuals?.update(dt,player,glacialMode,cerradoMode);
+  atmosphere?.update(dt,player,glacialMode?'glacial':cerradoMode?'cerrado':'amazon');
   if(glacialMode&&snowParticles){for(let i=0;i<snowPositions.length;i++){const p=snowPositions[i];p.y-=dt*(1.4+(i%5)*.25);p.x+=Math.sin(performance.now()*.0004+i)*dt*.25;if(p.y<0)p.set(player.position.x+(Math.random()-.5)*34,12+Math.random()*8,player.position.z-Math.random()*45);snowDummy.position.copy(p);snowDummy.updateMatrix();snowParticles.setMatrixAt(i,snowDummy.matrix);}snowParticles.instanceMatrix.needsUpdate=true;}
   director.update(dt);
   renderer.render(scene,camera);
