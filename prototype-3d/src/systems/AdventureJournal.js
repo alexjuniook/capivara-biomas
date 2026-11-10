@@ -43,7 +43,7 @@ export class AdventureJournal {
   record(event,amount=1){
     if(!event)return [];
     this.counts[event]=Math.max(0,Number(this.counts[event])||0)+Math.max(0,Number(amount)||0);
-    return this.#check();
+    const unlocked=this.#check();this.save();return unlocked;
   }
   visitBiome(biome){
     if(['amazon','glacial','cerrado'].includes(biome)&&!this.biomes.includes(biome))this.biomes.push(biome);
