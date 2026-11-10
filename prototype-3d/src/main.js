@@ -271,44 +271,89 @@ function updateFootstepDust(dt,moving){
   footstepDust.instanceMatrix.needsUpdate=true;
 }
 function updatePlayer(dt){
-  const cameraForward=new THREE.Vector3();camera.getWorldDirection(cameraForward);cameraForward.y=0;cameraForward.normalize();
+  // Movimento com aceleração, frenagem e velocidade máxima distintas por terreno.
+  const cameraForward=new THREE.Vector3();
+  camera.getWorldDirection(cameraForward);
+  cameraForward.y=0;
+  cameraForward.normalize();
   right.crossVectors(cameraForward,up).normalize();
   move.copy(cameraForward).multiplyScalar(keys.forward).addScaledVector(right,keys.right);
   if(move.lengthSq()>1)move.normalize();
-  const staminaState=stamina.update(dt,{running:keys.run,moving:move.lengthSq()>.02});
-  survival.update(dt,{moving:move.lengthSq()>.02,running:keys.run&&staminaState.canRun,weather:atmosphere?.weather||'clear',biome:glacialMode?'glacial':cerradoMode?'cerrado':'amazon',inWater:Math.abs(player.position.x-13)<3.7&&player.position.z<12&&player.position.z>-78});
-  explorationHUD?.setStamina(staminaState);
+
+  const movingInput=move.lengthSq()>.02;
+  const staminaState=stamina.update(dt,{running:keys.run,moving:movingInput});
   const sprinting=keys.run&&staminaState.canRun;
-  const speed=sprinting?7.1:4.2;
-  const desiredX=move.x*speed,desiredZ=move.z*speed;
-  const response=keys.forward||keys.right?12:8;
+  const inWater=Math.abs(player.position.x-13)<3.7&&player.position.z<12&&player.position.z>-78;
+  survival.update(dt,{moving:movingInput,running:sprinting,weather:atmosphere?.weather||'clear',biome:glacialMode?'glacial':cerradoMode?'cerrado':'amazon',inWater});
+  explorationHUD?.setStamina(staminaState);
+
+  const terrainFactor=inWater?.58:1;
+  const maxSpeed=(sprinting?5.8:2.65)*terrainFactor;
+  const desiredX=move.x*maxSpeed;
+  const desiredZ=move.z*maxSpeed;
+  const response=movingInput?7.5:9.5;
   playerVelocity.x=THREE.MathUtils.damp(playerVelocity.x,desiredX,response,dt);
   playerVelocity.z=THREE.MathUtils.damp(playerVelocity.z,desiredZ,response,dt);
+
+  // Pequena resistência lateral e arrasto na água dão peso ao corpo sem atrasar os comandos.
+  if(inWater){playerVelocity.x*=Math.exp(-1.8*dt);playerVelocity.z*=Math.exp(-1.8*dt);}
   player.position.x+=playerVelocity.x*dt;
   player.position.z+=playerVelocity.z*dt;
   player.position.x=THREE.MathUtils.clamp(player.position.x,-10,10);
   player.position.z=THREE.MathUtils.clamp(player.position.z,-78,11);
-  if(survival.state.inWater){playerVelocity.x*=.88;playerVelocity.z*=.88;}
-  if(move.lengthSq()>.02){const angle=Math.atan2(-move.z,move.x);player.rotation.y=THREE.MathUtils.damp(player.rotation.y,angle,10,dt);}
-  if(keys.jump&&!jumpWasDown&&grounded){verticalVelocity=survival.consumeJump()?7.5:5.2;grounded=false;}
+
+  const actualSpeed=Math.hypot(playerVelocity.x,playerVelocity.z);
+  if(actualSpeed>.12){
+    const angle=Math.atan2(-playerVelocity.z,playerVelocity.x);
+    const angleDelta=Math.atan2(Math.sin(angle-player.rotation.y),Math.cos(angle-player.rotation.y));
+    player.rotation.y+=angleDelta*(1-Math.exp(-9.5*dt));
+  }
+
+  if(keys.jump&&!jumpWasDown&&grounded&&!inWater){verticalVelocity=survival.consumeJump()?6.5:4.8;grounded=false;}
   jumpWasDown=keys.jump;
-  verticalVelocity-=18*dt;player.position.y+=verticalVelocity*dt;
+  verticalVelocity-=17.5*dt;
+  player.position.y+=verticalVelocity*dt;
   if(player.position.y<=0){player.position.y=0;verticalVelocity=0;grounded=true;}
-  const moving=move.lengthSq()>.02;
-  walkTime+=dt*(sprinting?13:8);
-  player.userData.legs.forEach((leg,i)=>{leg.rotation.x=moving?Math.sin(walkTime+i*Math.PI)*.42:THREE.MathUtils.damp(leg.rotation.x,0,8,dt);});
-  const breath=Math.sin(walkTime*.45)*.012;
-  player.userData.torso.scale.y=.67+breath+(moving?Math.abs(Math.sin(walkTime*2))*.025:0);
-  player.userData.head.rotation.z=(moving?Math.sin(walkTime)*.045:0)+Math.sin(performance.now()*.0007)*.012;
-  player.userData.head.rotation.x=moving?Math.sin(walkTime*.5)*.025:0;
-  player.userData.tail.rotation.z=Math.sin(walkTime*.75)*.16+(moving?.06:0);
-  player.userData.legs.forEach((leg,i)=>{leg.rotation.z=moving?Math.sin(walkTime+i*Math.PI)*.035:THREE.MathUtils.damp(leg.rotation.z,0,7,dt);});
-  updateFootstepDust(dt,moving&&sprinting);
-  player.userData.ears.forEach((ear,i)=>{ear.rotation.z=Math.sin(walkTime*.7+i)*.045+(moving?-.025:0);});
+  if(inWater&&player.position.y<.35){player.position.y=Math.max(0,player.position.y);verticalVelocity=Math.max(verticalVelocity,-1.8);}
+
+  // Ciclo de passada desacelera junto com o personagem; as patas trabalham em diagonal.
+  const gait=THREE.MathUtils.clamp(actualSpeed/5.8,0,1);
+  walkTime+=dt*(.35+actualSpeed*2.15);
+  const stride=.48*gait;
+  player.userData.legs.forEach((leg,i)=>{
+    const phase=walkTime+((i===0||i===3)?0:Math.PI);
+    const swing=Math.sin(phase)*stride;
+    leg.rotation.x=actualSpeed>.12?swing:THREE.MathUtils.damp(leg.rotation.x,0,10,dt);
+    leg.rotation.z=actualSpeed>.12?Math.cos(phase)*.045*gait:THREE.MathUtils.damp(leg.rotation.z,0,9,dt);
+  });
+  const breathing=Math.sin(performance.now()*.0018)*.012;
+  const bodyBob=grounded?Math.abs(Math.sin(walkTime*2))*gait*.018:0;
+  player.userData.torso.scale.y=.67+breathing+bodyBob;
+  player.userData.torso.rotation.z=THREE.MathUtils.damp(player.userData.torso.rotation.z,-gait*.025,5,dt);
+  player.userData.head.rotation.z=(actualSpeed>.12?Math.sin(walkTime)*.035*gait:0)+Math.sin(performance.now()*.0007)*.012;
+  player.userData.head.rotation.x=actualSpeed>.12?Math.sin(walkTime*.5)*.02*gait:0;
+  player.userData.tail.rotation.z=Math.sin(walkTime*.72)*(.08+gait*.1)+(sprinting?.04:0);
+  player.userData.ears.forEach((ear,i)=>{ear.rotation.z=Math.sin(walkTime*.65+i)*.035*gait;});
   const blink=Math.pow(Math.max(0,Math.sin(performance.now()*.00115)),70);
   player.userData.eyes.forEach(eye=>{eye.scale.y=1-blink*.88;});
-  // Simple physical blockers keep the character out of tree trunks and rocks.
-  for(const obstacle of obstacles){const p=new THREE.Vector3();obstacle.getWorldPosition(p);const radius=obstacle.geometry?.parameters?.radius||.6;const dx=player.position.x-p.x,dz=player.position.z-p.z;const min=radius+.7;if(dx*dx+dz*dz<min*min&&Math.abs(player.position.y)<1.2){const d=Math.max(.001,Math.hypot(dx,dz));player.position.x=p.x+dx/d*min;player.position.z=p.z+dz/d*min;}}
+  updateFootstepDust(dt,actualSpeed>3.4&&grounded);
+
+  // Colisão circular simples, com raio coerente para troncos e pedras.
+  for(const obstacle of obstacles){
+    const p=new THREE.Vector3();
+    obstacle.getWorldPosition(p);
+    const params=obstacle.geometry?.parameters||{};
+    const radius=params.radiusBottom||params.radius||params.radiusTop||.55;
+    const min=radius+.62;
+    const dx=player.position.x-p.x,dz=player.position.z-p.z;
+    if(dx*dx+dz*dz<min*min&&Math.abs(player.position.y)<1.2){
+      const d=Math.max(.001,Math.hypot(dx,dz));
+      player.position.x=p.x+dx/d*min;
+      player.position.z=p.z+dz/d*min;
+      playerVelocity.x*=.18;
+      playerVelocity.z*=.18;
+    }
+  }
 }
 function saveProgress(){
   const saved=progressStore.save({collected:fruits.map((fruit,index)=>fruit.userData.collected?index:null).filter(index=>index!==null),talked:companions?.talkedNames||[],portalUnlocked:portal?.unlocked,glacialMode,glacialCrystals:iceCrystals.length?iceCrystals.filter(c=>c.userData.collected).map(c=>c.userData.index):savedGlacialCrystals,mammothRescued:glacialMammoths?glacialMammoths.rescued:savedMammothRescued,cerradoMode,cerradoSeeds:cerradoSeeds.length?cerradoSeeds.filter(s=>s.userData.collected).map(s=>s.userData.index):savedCerradoSeeds,anteaterHelped,cerradoAnimals:cerradoWildlife?.observedNames||savedCerradoAnimals});
