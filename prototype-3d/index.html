@@ -16,8 +16,9 @@
     <div id="viewport" aria-label="Mundo 3D da aventura"></div>
     <header class="hud">
       <div class="brand"><span>🦫</span><div><strong>O Segredo das Três Eras</strong><small>Capítulo 1 · Amazônia</small></div></div>
-      <div class="stats"><button id="audioBtn" type="button" aria-label="Ativar ou desativar sons">SOM: DESLIGADO</button><span id="fruitStat">🍈 <b id="fruitCount">0</b>/8</span><span id="iceStat" class="hidden">💎 <b id="iceCount">0</b>/5</span><span>♥ <b id="hearts">3</b></span></div>
+      <div class="stats"><button id="settingsBtn" type="button" aria-expanded="false">AJUSTES</button><span id="fpsMeter" class="hidden">FPS <b id="fpsValue">—</b></span><button id="audioBtn" type="button" aria-label="Ativar ou desativar sons">SOM: DESLIGADO</button><span id="fruitStat">🍈 <b id="fruitCount">0</b>/8</span><span id="iceStat" class="hidden">💎 <b id="iceCount">0</b>/5</span><span>♥ <b id="hearts">3</b></span></div>
     </header>
+    <section id="settingsPanel" class="settings-panel hidden" aria-label="Configurações do jogo"><div class="settings-heading"><strong>Configurações</strong><button id="closeSettingsBtn" type="button" aria-label="Fechar configurações">×</button></div><label for="qualitySelect">Qualidade gráfica</label><select id="qualitySelect"><option value="auto">Automática (recomendada)</option><option value="low">Econômica</option><option value="medium">Equilibrada</option><option value="high">Alta</option></select><div class="settings-actions"><button id="pauseBtn" type="button">PAUSAR</button><button id="hudBtn" type="button">OCULTAR HUD</button><button id="fpsBtn" type="button">MOSTRAR FPS</button></div><small>As preferências ficam salvas neste navegador.</small></section>
     <section class="mission"><small>MISSÃO ATUAL</small><strong id="missionText">Encontre os frutos da floresta</strong></section>
     <div class="camera-panel" aria-label="Modos de câmera">
       <button data-camera="free" title="Câmera livre">360°</button>
