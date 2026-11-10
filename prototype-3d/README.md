@@ -39,14 +39,14 @@ Depois de publicar uma prévia do branch, a página fica em `/prototype-3d/`. Pa
 
 ### Limitações conhecidas
 
-Este é um primeiro protótipo jogável, não o jogo final. A capivara ainda usa geometria procedural, sem modelo GLB nem animações profissionais; a física e as colisões são simplificadas; o sistema de vidas e progressão ainda não está completo; não há áudio, combate ou uma campanha completa. O progresso local cobre a coleta, conversas e o desbloqueio do capítulo; ainda não há sincronização entre dispositivos nem um mapa glacial com missões próprias. Os animais do Cerrado usam rotinas simples de deslocamento e observação, não simulação ecológica completa. A paisagem sonora é sintetizada pelo navegador e não substitui gravações naturais ou trilha profissional. Os pássaros e borboletas são elementos ambientais simples, não fauna com IA ou rotinas ecológicas completas. O protótipo depende de conexão com a internet para carregar Three.js do CDN.
+Este é um protótipo 3D em evolução, não um jogo final. A capivara e os animais usam geometria procedural, sem modelos GLB nem animações profissionais; física, colisões e rotinas de fauna são simplificadas. O áudio atual é uma paisagem sonora sintetizada pelo navegador, não gravações ambientais ou trilha original. O progresso fica no armazenamento local do navegador, sem sincronização entre dispositivos. O jogo depende de conexão com a internet para carregar Three.js pelo CDN. Os animais do Cerrado usam rotinas simples de deslocamento e observação, não simulação ecológica completa. A paisagem sonora é sintetizada pelo navegador e não substitui gravações naturais ou trilha profissional. Os pássaros e borboletas são elementos ambientais simples, não fauna com IA ou rotinas ecológicas completas. O protótipo depende de conexão com a internet para carregar Three.js do CDN.
 
-O renderizador reduz antialiasing, sombras e resolução interna em telas de toque para favorecer aparelhos modestos. A compatibilidade e o desempenho ainda precisam ser verificados em aparelhos reais, especialmente no Samsung A07. O branch é de desenvolvimento e não foi mesclado à produção nem implantado no Cloudflare.
+O renderizador reduz antialiasing, sombras e resolução interna em telas de toque para favorecer aparelhos modestos. A movimentação usa aceleração e desaceleração suaves, e os controles são pausados durante diálogos e quando a aba perde foco. A compatibilidade e o desempenho ainda precisam ser verificados em aparelhos reais, especialmente no Samsung A07. O branch é de desenvolvimento e não foi mesclado à produção nem implantado no Cloudflare.
 
 ## Próximos marcos
 
-1. Melhorar personagem, animações e colisões.
-2. Criar fauna com rotinas e comportamento mais realistas.
-3. Adicionar áudio, trilha e efeitos ambientais.
-4. Otimizar qualidade adaptativa e testar toque/desempenho em Android.
-5. Preparar uma prévia separada para validação antes de qualquer troca da produção.
+1. Trocar geometria procedural por modelos 3D otimizados e animações próprias.
+2. Melhorar colisões, navegação dos animais e interação ambiental.
+3. Criar trilha e efeitos sonoros originais por bioma.
+4. Testar desempenho, acessibilidade e controles em Android e desktop reais.
+5. Validar uma prévia separada antes de qualquer troca da produção.
