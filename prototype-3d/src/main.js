@@ -16,6 +16,7 @@ import { GameSettings, QUALITY } from './systems/GameSettings.js';
 import { AdventureJournal } from './systems/AdventureJournal.js';
 import { StaminaSystem, CheckpointSystem, ExplorationHUD } from './systems/ExplorationSystems.js';
 import { SurvivalSystems } from './systems/SurvivalSystems.js';
+import { createTerrain, terrainHeightAt } from './world/TerrainBuilder.js';
 
 const viewport = document.querySelector('#viewport');
 const loading = document.querySelector('#loading');
@@ -172,7 +173,7 @@ function createWorld() {
   const hemisphereLight=new THREE.HemisphereLight('#d8f2ff','#425b36',2.1);scene.add(hemisphereLight);
   const sun=new THREE.DirectionalLight('#fff0cf',3.2);sun.position.set(-18,30,12);sun.castShadow=true;const shadowResolution=innerWidth<700?Math.min(preset.shadowSize,512):preset.shadowSize;sun.shadow.mapSize.set(shadowResolution,shadowResolution);sun.shadow.camera.left=-35;sun.shadow.camera.right=35;sun.shadow.camera.top=35;sun.shadow.camera.bottom=-35;sun.shadow.bias=-.0002;scene.add(sun);
   atmosphere=new WorldAtmosphere({scene,sun,hemisphere:hemisphereLight,quality:preset.visuals,weatherLabel:document.querySelector('#weatherLabel')});
-  const ground=new THREE.Mesh(new THREE.PlaneGeometry(180,180,1,1),worldVisuals.createGroundMaterial('#587a43'));ground.rotation.x=-Math.PI/2;ground.receiveShadow=true;scene.add(ground);
+  const terrain=createTerrain(scene,{biome:'amazon',quality:preset.visuals,materialColor:'#587a43'});scene.userData.terrain=terrain;
   const path=new THREE.Mesh(new THREE.PlaneGeometry(12,100),material('#94784d'));path.rotation.x=-Math.PI/2;path.position.set(0,.012,-20);path.receiveShadow=true;scene.add(path);
   const riverMaterial=new THREE.MeshPhysicalMaterial({color:'#318eaa',roughness:.2,metalness:.04,transparent:true,opacity:.9,clearcoat:1,clearcoatRoughness:.12});
   riverMaterial.onBeforeCompile=(shader)=>{
@@ -348,12 +349,12 @@ function updatePlayer(dt){
   jumpWasDown=keys.jump;
   if(inWater){
     verticalVelocity=THREE.MathUtils.damp(verticalVelocity,0,5,dt);
-    player.position.y=THREE.MathUtils.damp(player.position.y,.22,3.2,dt);
+    player.position.y=THREE.MathUtils.damp(player.position.y,terrainHeightAt(player.position.x,player.position.z,glacialMode?'glacial':cerradoMode?'cerrado':'amazon')+.22,3.2,dt);
     grounded=true;
   }else{
     verticalVelocity-=17.5*dt;
     player.position.y+=verticalVelocity*dt;
-    if(player.position.y<=0){player.position.y=0;verticalVelocity=0;grounded=true;}
+    const groundHeight=terrainHeightAt(player.position.x,player.position.z,glacialMode?'glacial':cerradoMode?'cerrado':'amazon');if(player.position.y<=groundHeight){player.position.y=groundHeight;verticalVelocity=0;grounded=true;}
   }
 
   // Ciclo de passada desacelera junto com o personagem; as patas trabalham em diagonal.
