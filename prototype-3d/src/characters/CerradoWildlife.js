@@ -60,6 +60,9 @@ export class CerradoWildlife {
       const dx=targetX-p.x,dz=targetZ-p.z,d=Math.hypot(dx,dz);
       if(d>.08){p.x+=dx/d*animal.speed*dt;p.z+=dz/d*animal.speed*dt;animal.root.rotation.y=Math.atan2(-dz,dx);}
       p.y=Math.abs(Math.sin(animal.phase*3))*.025;
+      const stride=Math.sin(animal.phase*(animal.species==='Seriema'?5.2:3.8));
+      animal.root.userData.legs?.forEach((leg,index)=>{leg.rotation.z=stride*(index%2===0?1:-1)*.16;});
+      if(animal.root.userData.tail)animal.root.userData.tail.rotation.y=Math.sin(animal.phase*1.7)*.24;
       if(animal.species==='Seriema')animal.root.rotation.z=Math.sin(animal.phase*2)*.025;
       if(animal.species==='Lobo-guará')animal.root.rotation.z=Math.sin(animal.phase*1.4)*.018;
     }
