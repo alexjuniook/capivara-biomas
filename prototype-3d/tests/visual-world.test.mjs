@@ -23,3 +23,13 @@ test('capybara has subtle facial and ear animation hooks', () => {
   assert.ok(main.includes('userData.eyes'));
   assert.ok(main.includes('const blink='));
 });
+
+
+test('glacial chapter releases GPU resources when its world is removed', () => {
+  const glacial = readFileSync(new URL('../src/world/GlacialBiome.js', import.meta.url), 'utf8');
+  const wildlife = readFileSync(new URL('../src/characters/GlacialWildlife.js', import.meta.url), 'utf8');
+  assert.ok(glacial.includes('geometries.forEach(geometry=>geometry.dispose())'));
+  assert.ok(glacial.includes('materials.forEach(material=>material.dispose())'));
+  assert.ok(wildlife.includes('geometries.forEach(geometry=>geometry.dispose())'));
+  assert.ok(wildlife.includes('materials.forEach(material=>material.dispose())'));
+});
