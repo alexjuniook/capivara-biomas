@@ -155,14 +155,15 @@ function setup() {
   camera=new THREE.PerspectiveCamera(62,innerWidth/innerHeight,.1,180);
   createWorld();
   director=new CameraDirector({camera,domElement:renderer.domElement,scene,target:player,collisionObjects:obstacles});
-  director.setMode('thirdPerson');
+  director.setMode(gameSettings.cameraMode||'thirdPerson');
+  document.querySelectorAll('[data-camera]').forEach(b=>b.classList.toggle('selected',b.dataset.camera===(gameSettings.cameraMode||'thirdPerson')));
   restoreProgress();
   clock=new THREE.Clock();
   window.addEventListener('resize',resize);
   loading.classList.add('hidden');welcome.classList.remove('hidden');
 }
 function resize(){if(!renderer||!camera)return;camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();const touchDevice=matchMedia('(pointer:coarse)').matches;const preset=QUALITY[gameSettings.quality]||QUALITY.auto;currentPixelRatio=Math.min(devicePixelRatio,touchDevice?1.1:1.5)*preset.pixelRatio;renderer.setPixelRatio(currentPixelRatio);renderer.setSize(innerWidth,innerHeight);}
-function setCameraMode(mode){director.setMode(mode);document.querySelectorAll('[data-camera]').forEach(b=>b.classList.toggle('selected',b.dataset.camera===mode));}
+function setCameraMode(mode){director.setMode(mode);gameSettings.cameraMode=mode;settingsStore.save(gameSettings);document.querySelectorAll('[data-camera]').forEach(b=>b.classList.toggle('selected',b.dataset.camera===mode));}
 function bindControls(){
   const settingsPanel=document.querySelector('#settingsPanel');
   const settingsBtn=document.querySelector('#settingsBtn');
@@ -195,9 +196,9 @@ function bindControls(){
   function moveStick(e){const r=area.getBoundingClientRect(),cx=r.left+r.width/2,cy=r.top+r.height/2;let dx=e.clientX-cx,dy=e.clientY-cy;const max=36,len=Math.hypot(dx,dy);if(len>max){dx=dx/len*max;dy=dy/len*max;}stick.style.transform=`translate(${dx}px,${dy}px)`;keys.right=THREE.MathUtils.clamp(dx/max,-1,1);keys.forward=THREE.MathUtils.clamp(-dy/max,-1,1);}
   const jump=document.querySelector('#jumpBtn');jump.addEventListener('pointerdown',e=>{e.preventDefault();keys.jump=true;});['pointerup','pointercancel','pointerleave'].forEach(ev=>jump.addEventListener(ev,()=>keys.jump=false));
   const run=document.querySelector('#runBtn');run.addEventListener('pointerdown',()=>keys.run=true);['pointerup','pointercancel','pointerleave'].forEach(ev=>run.addEventListener(ev,()=>keys.run=false));
-  document.querySelector('#startBtn').addEventListener('click',()=>{started=true;welcome.classList.add('hidden');const audioOn=audioAmbience.start();document.querySelector('#audioBtn').textContent=audioOn?'SOM: LIGADO':'SOM INDISPONÍVEL';});
-  document.querySelector('#audioBtn')?.addEventListener('click',()=>{const enabled=audioAmbience.toggle();document.querySelector('#audioBtn').textContent=enabled?'SOM: LIGADO':'SOM: DESLIGADO';});
-  window.addEventListener('keydown',e=>{if(e.key.toLowerCase()==='e'&&started)interact();if(e.key.toLowerCase()==='f'&&started)scareWildlife();});
+  document.querySelector('#startBtn').addEventListener('click',()=>{started=true;welcome.classList.add('hidden');const audioOn=gameSettings.soundEnabled?audioAmbience.start():false;document.querySelector('#audioBtn').textContent=audioOn?'SOM: LIGADO':'SOM: DESLIGADO';});
+  document.querySelector('#audioBtn')?.addEventListener('click',()=>{const enabled=audioAmbience.toggle();gameSettings.soundEnabled=enabled;settingsStore.save(gameSettings);document.querySelector('#audioBtn').textContent=enabled?'SOM: LIGADO':'SOM: DESLIGADO';});
+  window.addEventListener('keydown',e=>{if(e.key==='Escape'&&started){paused=!paused;clearMovementInput();document.querySelector('#pauseBtn').textContent=paused?'CONTINUAR':'PAUSAR';if(paused)showDialogue('Jogo pausado','Abra AJUSTES e escolha CONTINUAR para retomar.');else document.querySelector('#dialogue').classList.add('hidden');}if(e.key.toLowerCase()==='e'&&started&&!paused)interact();if(e.key.toLowerCase()==='f'&&started&&!paused)scareWildlife();});
   document.querySelector('#talkBtn')?.addEventListener('click',interact);
   document.querySelector('#scareBtn')?.addEventListener('click',scareWildlife);
   document.querySelector('#enterIceBtn')?.addEventListener('click',enterGlacialChapter);
