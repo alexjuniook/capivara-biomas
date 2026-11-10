@@ -53,6 +53,7 @@ export class GlacialWildlife {
       }
     }
   }
+  dispose(){ for(const enemy of this.enemies)this.scene.remove(enemy.root); this.enemies=[]; }
   scare(){
     if(this.scareCooldown>0)return false;
     this.scareCooldown=0.65;
