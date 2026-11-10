@@ -21,7 +21,9 @@ Depois de publicar uma prévia do branch, a página fica em `/prototype-3d/`. Pa
 
 ### Conteúdo implementado nesta etapa
 
-- Cena 3D Three.js com iluminação, sombras adaptadas ao dispositivo, névoa e terreno amazônico.
+- Cena 3D Three.js com iluminação, sombras adaptadas ao dispositivo, névoa e terreno procedural com malha subdividida, elevação por bioma, normais recalculadas e textura de solo em camadas.
+- Três perfis de relevo: margens e elevações amazônicas, ondulações glaciares e chapadas/veredas do Cerrado; o corredor principal permanece suave para manter a jogabilidade e o personagem acompanha a altura do solo.
+- Capivara com refinamento anatômico procedural em close-up: narinas, vibrissas, tufos de pelagem, dedos das patas e pelagem instanciada; densidade visual adaptada à qualidade.
 - Capivara 3D construída com geometria procedural, com animação simples de patas e corpo.
 - Trilha, rio, árvores, folhagem, pedras, tronco caído e frutos colecionáveis.
 - Movimento, corrida, salto, limites da área e colisões simples com obstáculos.
@@ -44,14 +46,14 @@ Depois de publicar uma prévia do branch, a página fica em `/prototype-3d/`. Pa
 
 ### Limitações conhecidas
 
-Este é um protótipo 3D em evolução, não um jogo final. A capivara e os animais usam geometria procedural, sem modelos GLB nem animações profissionais; física, colisões e rotinas de fauna são simplificadas. O áudio atual é uma paisagem sonora sintetizada pelo navegador, não gravações ambientais ou trilha original. O progresso fica no armazenamento local do navegador, sem sincronização entre dispositivos. O jogo depende de conexão com a internet para carregar Three.js pelo CDN. Os animais do Cerrado usam rotinas simples de deslocamento e observação, não simulação ecológica completa. Os pássaros e borboletas são elementos ambientais simples, não fauna com IA ou rotinas ecológicas completas.
+Este é um protótipo 3D em evolução, não um jogo final. O relevo e os personagens continuam sendo construídos proceduralmente: ainda não há pacote de modelos GLB/rigs profissionais nem captura de movimento. As novas malhas de terreno e detalhes anatômicos melhoram a leitura visual, mas não substituem assets 3D autorais de alta resolução, texturas PBR produzidas por artistas ou animações profissionais. Física, colisões e rotinas de fauna continuam simplificadas. O áudio atual é uma paisagem sonora sintetizada pelo navegador, não gravações ambientais ou trilha original. O progresso fica no armazenamento local do navegador, sem sincronização entre dispositivos. O jogo depende de conexão com a internet para carregar Three.js pelo CDN. Os animais do Cerrado usam rotinas simples de deslocamento e observação, não simulação ecológica completa. Os pássaros e borboletas são elementos ambientais simples, não fauna com IA ou rotinas ecológicas completas.
 
 O renderizador reduz antialiasing, sombras e resolução interna em telas de toque para favorecer aparelhos modestos. A movimentação usa aceleração e desaceleração suaves, e os controles são pausados durante diálogos e quando a aba perde foco. A compatibilidade e o desempenho ainda precisam ser verificados em aparelhos reais, especialmente no Samsung A07. O branch é de desenvolvimento e não foi mesclado à produção nem implantado no Cloudflare.
 
 ## Próximos marcos
 
-1. Trocar geometria procedural por modelos 3D otimizados e animações próprias.
-2. Melhorar colisões, navegação dos animais e interação ambiental.
-3. Criar trilha e efeitos sonoros originais por bioma.
-4. Testar desempenho, acessibilidade e controles em Android e desktop reais.
-5. Validar uma prévia separada antes de qualquer troca da produção.
+1. Incorporar modelos GLB otimizados e licenciados para capivara, mamutes, lobos, tamanduá e fauna do Cerrado, com LODs para celulares.
+2. Criar rigs e ciclos próprios de caminhada, corrida, nado, alimentação, alerta e descanso.
+3. Expandir o relevo com trilhas, margens, rochas e navegação dos animais ajustadas à altura do terreno.
+4. Evoluir materiais PBR, sombras e pós-processamento com limites por qualidade gráfica.
+5. Testar desempenho, acessibilidade e controles em Android e desktop reais.
