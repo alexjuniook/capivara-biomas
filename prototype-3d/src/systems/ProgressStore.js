@@ -15,6 +15,9 @@ export class ProgressStore {
         glacialMode: Boolean(progress.glacialMode),
         glacialCrystals: Array.isArray(progress.glacialCrystals) ? progress.glacialCrystals : [],
         mammothRescued: Boolean(progress.mammothRescued),
+        cerradoMode: Boolean(progress.cerradoMode),
+        cerradoSeeds: Array.isArray(progress.cerradoSeeds) ? progress.cerradoSeeds : [],
+        anteaterHelped: Boolean(progress.anteaterHelped),
         updatedAt: Date.now()
       }));
       return true;
