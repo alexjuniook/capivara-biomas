@@ -130,6 +130,31 @@ function makeCapybara() {
   for(const side of [-1,1]){const whisker=new THREE.Mesh(new THREE.CylinderGeometry(.012,.008,.42,5),dark);whisker.position.set(1.34,1.03,side*.2);whisker.rotation.z=-.12;whisker.rotation.x=side*.42;root.add(whisker);}
   // Small cheek tufts and subtle fur ridges give the silhouette more character.
   for(let i=0;i<5;i++){const tuft=new THREE.Mesh(new THREE.ConeGeometry(.075,.22,5),furLight);tuft.position.set(.15+i*.18,1.55,-.47);tuft.rotation.z=-.55;root.add(tuft);}
+  // Fine procedural coat: a low-cost instanced layer that breaks the smooth toy-like silhouette.
+  const furCount=innerWidth<700?90:190;
+  const furGeometry=new THREE.ConeGeometry(.018,.105,3);
+  furGeometry.translate(0,.045,0);
+  const furMesh=new THREE.InstancedMesh(furGeometry,furLight,furCount);
+  const furDummy=new THREE.Object3D();
+  for(let i=0;i<furCount;i++){
+    const vertical=Math.random()*2-1;
+    const angle=Math.random()*Math.PI*2;
+    const ring=Math.sqrt(1-vertical*vertical);
+    const px=1.05*ring*Math.cos(angle);
+    const py=.88+.67*vertical;
+    const pz=.66*ring*Math.sin(angle);
+    const normal=new THREE.Vector3(px/(1.05*1.05),vertical/.67,pz/(.66*.66)).normalize();
+    furDummy.position.set(px,py,pz);
+    furDummy.quaternion.setFromUnitVectors(new THREE.Vector3(0,1,0),normal);
+    furDummy.rotateY(Math.random()*Math.PI*2);
+    const size=.55+Math.random()*.7;
+    furDummy.scale.set(size,size,size);
+    furDummy.updateMatrix();
+    furMesh.setMatrixAt(i,furDummy.matrix);
+  }
+  furMesh.instanceMatrix.needsUpdate=true;
+  furMesh.castShadow=false;
+  root.add(furMesh);
   root.userData.tail=tail;root.userData.nose=nose;root.userData.rootHeight=0;
   root.position.set(0,0,5);root.rotation.y=Math.PI/2;return root;
 }
