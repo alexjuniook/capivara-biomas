@@ -196,8 +196,9 @@ function restoreProgress(){
   fruits.forEach((fruit,index)=>{if(collectedSet.has(index)){fruit.userData.collected=true;fruit.visible=false;collected++;}});
   fruitCount.textContent=collected;
   companions?.restoreTalked(Array.isArray(saved.talked)?saved.talked:[]);
-  if(saved.portalUnlocked)portal?.unlock();
-  if(collected===fruits.length&&collected>0&&!saved.portalUnlocked)missionText.textContent='Frutos encontrados! Converse com Tico';
+  if(saved.portalUnlocked||(collected===fruits.length&&companions?.talkedNames.includes('Tico')))portal?.unlock();
+  if(collected===fruits.length&&collected>0&&!portal?.unlocked)missionText.textContent='Frutos encontrados! Converse com Tico';
+  else if(portal?.unlocked)missionText.textContent='Portal aberto! Encontre a passagem congelada';
   else if(collected>0)missionText.textContent='Continue sua jornada pela floresta';
   if(saved.glacialMode){portal?.unlock();enterGlacialChapter();}
 }
