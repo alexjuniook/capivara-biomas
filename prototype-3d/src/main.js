@@ -348,7 +348,7 @@ function updateGlacialCollectibles(dt){
 }
 function animate(){
   requestAnimationFrame(animate);const dt=Math.min(clock.getDelta(),.04);
-  if(started){updatePlayer(dt);updateCollectibles(dt);updateGlacialCollectibles(dt);updateCerradoCollectibles(dt);wildlife?.update(dt);glacialMammoths?.update(dt);companions?.update(dt);portal?.update(dt,player);if(cerradoGate&&glacialMode&&player.position.distanceTo(cerradoGate.position)<3.4){showDialogue('Uma nova paisagem espera','O vale está salvo. Pressione E para atravessar o portal dourado e explorar o Cerrado brasileiro.','ATRAVESSAR');document.querySelector('#closeDialogueBtn').onclick=enterCerradoChapter;cerradoGate=null;}}
+  if(started){updatePlayer(dt);updateCollectibles(dt);updateGlacialCollectibles(dt);updateCerradoCollectibles(dt);wildlife?.update(dt);glacialMammoths?.update(dt);companions?.update(dt);portal?.update(dt,player);if(cerradoGate&&glacialMode&&!cerradoGate.userData.prompted&&player.position.distanceTo(cerradoGate.position)<3.4){cerradoGate.userData.prompted=true;showDialogue('Uma nova paisagem espera','O vale está salvo. Pressione E ou ATRAVESSAR para conhecer o Cerrado brasileiro.','ATRAVESSAR');document.querySelector('#closeDialogueBtn').onclick=enterCerradoChapter;}}
   if(ambientLife)ambientLife.update(dt,player);
   if(glacialMode&&snowParticles){for(let i=0;i<snowPositions.length;i++){const p=snowPositions[i];p.y-=dt*(1.4+(i%5)*.25);p.x+=Math.sin(performance.now()*.0004+i)*dt*.25;if(p.y<0)p.set(player.position.x+(Math.random()-.5)*34,12+Math.random()*8,player.position.z-Math.random()*45);snowDummy.position.copy(p);snowDummy.updateMatrix();snowParticles.setMatrixAt(i,snowDummy.matrix);}snowParticles.instanceMatrix.needsUpdate=true;}
   director.update(dt);
