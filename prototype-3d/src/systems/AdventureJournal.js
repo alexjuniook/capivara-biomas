@@ -24,7 +24,7 @@ const ACHIEVEMENTS=[
 
 export class AdventureJournal {
   constructor(storage=globalThis.localStorage){
-    this.storage=storage;this.counts={};this.unlocked=[];this.minutes=0;this.biomes=[];
+    this.storage=storage;this.counts={};this.unlocked=[];this.minutes=0;this.biomes=[];this.saveTimer=0;
     this.load();
   }
   load(){
@@ -50,9 +50,11 @@ export class AdventureJournal {
     this.save();return this.#check();
   }
   tick(dt,{weather='clear'}={}){
-    if(Number.isFinite(dt)&&dt>0)this.minutes+=dt/60;
+    if(Number.isFinite(dt)&&dt>0){this.minutes+=dt/60;this.saveTimer+=dt;}
     if(weather==='storm'&&!this.unlocked.includes('storm_watcher'))this.counts.storm=1;
-    return this.#check();
+    const unlocked=this.#check();
+    if(this.saveTimer>=10){this.saveTimer=0;this.save();}
+    return unlocked;
   }
   #check(){
     const newly=[];
