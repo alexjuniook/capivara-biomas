@@ -12,7 +12,11 @@ Depois de publicar uma prévia do branch, a página fica em `/prototype-3d/`. Pa
 
 - Teclado: WASD ou setas para andar; Espaço para pular; Shift para correr.
 - Celular: joystick virtual, botões PULAR, CORRER, CONVERSAR e ASSUSTAR.
-- Câmera: Livre 360°, Terceira pessoa, Próxima e Cinematográfica.
+- Câmera: Livre 360°, Terceira pessoa, Próxima e Cinematográfica; a última escolha fica salva.
+- Painel de ajustes: qualidade gráfica econômica/equilibrada/alta/automática, pausa, visibilidade do HUD e contador de FPS.
+- Qualidade automática: ajusta dinamicamente a resolução interna conforme o tempo médio dos quadros para equilibrar fluidez e nitidez.
+- Preferências de som, câmera, HUD, FPS e qualidade persistidas localmente no navegador.
+- Tecla Esc para pausar/retomar a aventura; os controles de movimento são limpos ao pausar.
 - Mouse/toque: arraste para orbitar e use roda/pinça para zoom nos modos interativos.
 
 ### Conteúdo implementado nesta etapa
