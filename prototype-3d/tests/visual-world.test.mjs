@@ -63,3 +63,14 @@ test('capybara close-up model includes facial and paw details', () => {
   assert.ok(main.includes("'dedo'"));
   assert.ok(main.includes('for(let i=0;i<11;i++)'));
 });
+
+test('glacial wildlife has articulated wolf legs and mammoth anatomy', () => {
+  const wolves = readFileSync(new URL('../src/characters/GlacialWildlife.js', import.meta.url), 'utf8');
+  const mammoths = readFileSync(new URL('../src/characters/GlacialMammoths.js', import.meta.url), 'utf8');
+  assert.ok(wolves.includes('root.userData.legs=legs'));
+  assert.ok(wolves.includes('root.userData.tail=tail'));
+  assert.ok(wolves.includes('enemy.root.userData.tail.rotation.z'));
+  assert.ok(mammoths.includes('new THREE.TubeGeometry(curve,14'));
+  assert.ok(mammoths.includes('root.userData.ears=ears'));
+  assert.ok(mammoths.includes('this.parent.userData.ears.forEach'));
+});
