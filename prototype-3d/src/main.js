@@ -5,6 +5,7 @@ import { CompanionSystem } from './characters/CompanionSystem.js';
 import { GlacialPortal } from './world/GlacialPortal.js';
 import { buildGlacialBiome } from './world/GlacialBiome.js';
 import { ProgressStore } from './systems/ProgressStore.js';
+import { GlacialWildlife } from './characters/GlacialWildlife.js';
 
 const viewport = document.querySelector('#viewport');
 const loading = document.querySelector('#loading');
@@ -14,7 +15,7 @@ const fruitCount = document.querySelector('#fruitCount');
 const missionText = document.querySelector('#missionText');
 const heartsText = document.querySelector('#hearts');
 
-let renderer, scene, camera, director, player, clock, ambientLife, companions, portal;
+let renderer, scene, camera, director, player, clock, ambientLife, companions, portal, wildlife;
 let glacialMode = false, snowParticles = null, snowDummy = null, snowPositions = [], glacialBiome = null, iceCrystals = [], glacialCrystals = 0, savedGlacialCrystals = [];
 const progressStore = new ProgressStore();
 let started = false, collected = 0, lives = 3;
@@ -158,8 +159,9 @@ function bindControls(){
   const jump=document.querySelector('#jumpBtn');jump.addEventListener('pointerdown',e=>{e.preventDefault();keys.jump=true;});['pointerup','pointercancel','pointerleave'].forEach(ev=>jump.addEventListener(ev,()=>keys.jump=false));
   const run=document.querySelector('#runBtn');run.addEventListener('pointerdown',()=>keys.run=true);['pointerup','pointercancel','pointerleave'].forEach(ev=>run.addEventListener(ev,()=>keys.run=false));
   document.querySelector('#startBtn').addEventListener('click',()=>{started=true;welcome.classList.add('hidden');});
-  window.addEventListener('keydown',e=>{if(e.key.toLowerCase()==='e'&&started)interact();});
+  window.addEventListener('keydown',e=>{if(e.key.toLowerCase()==='e'&&started)interact();if(e.key.toLowerCase()==='f'&&started)scareWildlife();});
   document.querySelector('#talkBtn')?.addEventListener('click',interact);
+  document.querySelector('#scareBtn')?.addEventListener('click',scareWildlife);
   document.querySelector('#enterIceBtn')?.addEventListener('click',enterGlacialChapter);
   document.querySelector('#closeDialogueBtn')?.addEventListener('click',()=>document.querySelector('#dialogue').classList.add('hidden'));
 }
@@ -239,6 +241,7 @@ function enterGlacialChapter(){
   scene.fog.color.set('#c6e5ed');scene.fog.density=.018;
   scene.traverse(obj=>{if(obj.isMesh&&obj.material?.color&&obj.name!=='fruto'){const color=obj.material.color;if(color.g>.28&&color.r<.5){color.lerp(new THREE.Color('#a9c5c9'),.38);}}});
   glacialBiome=buildGlacialBiome(scene,innerWidth<700?.55:1);
+  wildlife=new GlacialWildlife({scene,player,onDamage:takeDamage,onDefeated:()=>showDialogue('Predador afastado!','Você conseguiu espantar o lobo-das-neves. Continue atento: ainda há outro pelo vale.')});
   iceCrystals=glacialBiome.crystals||[];
   iceCrystals.forEach(crystal=>{if(savedGlacialCrystals.includes(crystal.userData.index)){crystal.userData.collected=true;crystal.visible=false;}});
   glacialCrystals=iceCrystals.filter(crystal=>crystal.userData.collected).length;
@@ -257,6 +260,16 @@ function enterGlacialChapter(){
 function updateCollectibles(dt){
   for(const fruit of fruits){if(fruit.userData.collected)continue;fruit.rotation.y+=dt*1.2;fruit.position.y=fruit.userData.baseY+Math.sin(performance.now()*.002+fruit.position.z)*.12;if(fruit.position.distanceTo(player.position.clone().add(new THREE.Vector3(0,1,0)))<1.45){fruit.userData.collected=true;fruit.visible=false;collected++;fruitCount.textContent=collected;saveProgress();if(collected===fruits.length){if(companions?.talkedNames.includes('Tico')){portal?.unlock();missionText.textContent='Portal aberto! Encontre a passagem congelada';}else{missionText.textContent='Frutos encontrados! Converse com Tico';}showDialogue('Missão concluída','Você encontrou todos os frutos! Procure Tico para descobrir como atravessar.');}}}
 }
+function scareWildlife(){
+  if(!glacialMode||!wildlife)return;
+  if(!wildlife.scare())showDialogue('Sem ameaças por perto','Aproxime-se de um lobo-das-neves e use ASSUSTAR para se defender.');
+}
+function takeDamage(){
+  lives=Math.max(0,lives-1);heartsText.textContent=''.padStart(lives,'♥');
+  player.position.set(0,0,5);
+  if(lives===0){lives=3;heartsText.textContent='♥♥♥';showDialogue('Você descansou na cabana','Os companheiros ajudaram a capivara a se recuperar. Suas descobertas continuam salvas.');}
+  else showDialogue('Cuidado com as presas!','Um lobo-das-neves alcançou você. Corra, pule ou use ASSUSTAR para se defender.');
+}
 function updateGlacialCollectibles(dt){
   if(!glacialMode||!iceCrystals.length)return;
   for(const crystal of iceCrystals){
@@ -274,7 +287,7 @@ function updateGlacialCollectibles(dt){
 }
 function animate(){
   requestAnimationFrame(animate);const dt=Math.min(clock.getDelta(),.04);
-  if(started){updatePlayer(dt);updateCollectibles(dt);updateGlacialCollectibles(dt);companions?.update(dt);portal?.update(dt,player);}
+  if(started){updatePlayer(dt);updateCollectibles(dt);updateGlacialCollectibles(dt);wildlife?.update(dt);companions?.update(dt);portal?.update(dt,player);}
   if(ambientLife)ambientLife.update(dt,player);
   if(glacialMode&&snowParticles){for(let i=0;i<snowPositions.length;i++){const p=snowPositions[i];p.y-=dt*(1.4+(i%5)*.25);p.x+=Math.sin(performance.now()*.0004+i)*dt*.25;if(p.y<0)p.set(player.position.x+(Math.random()-.5)*34,12+Math.random()*8,player.position.z-Math.random()*45);snowDummy.position.copy(p);snowDummy.updateMatrix();snowParticles.setMatrixAt(i,snowDummy.matrix);}snowParticles.instanceMatrix.needsUpdate=true;}
   director.update(dt);
