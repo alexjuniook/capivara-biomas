@@ -35,10 +35,10 @@ test('journal tracks unique fauna, weather and ignores invalid biomes',()=>{
 test('journal safely restores and persists progress',()=>{
   const storage=memoryStorage();
   const journal=new AdventureJournal(storage);
-  journal.record('crystal',5);
+  journal.record('fruit',8);
   journal.tick(12);
   const restored=new AdventureJournal(storage);
-  assert.ok(restored.getUnlocked().some(item=>item.id==='crystal_master'));
+  assert.ok(restored.getUnlocked().some(item=>item.id==='fruit_master'));
   assert.equal(restored.getSummary().minutes,0);
   assert.equal(restored.getSummary().unlocked,2);
 });
