@@ -471,6 +471,7 @@ function enterGlacialChapter(){
   scene.background.set('#b9dce8');
   scene.fog.color.set('#c6e5ed');scene.fog.density=.018;
   scene.traverse(obj=>{if(obj.isMesh&&obj.material?.color&&obj.name!=='fruto'){const color=obj.material.color;if(color.g>.28&&color.r<.5){color.lerp(new THREE.Color('#a9c5c9'),.38);}}});
+  scene.userData.terrain?.dispose();scene.userData.terrain=createTerrain(scene,{biome:'glacial',quality:innerWidth<700?.55:1,materialColor:'#e7f2f5'});
   glacialBiome=buildGlacialBiome(scene,innerWidth<700?.55:1);
   wildlife=new GlacialWildlife({scene,player,onDamage:takeDamage,onDefeated:()=>showDialogue('Predador afastado!','Você conseguiu espantar o lobo-das-neves. Continue atento: ainda há outro pelo vale.')});
   glacialMammoths=new GlacialMammoths({scene,player,restored:savedMammothRescued,onRescue:()=>{savedMammothRescued=true;recordJournal('mammoth');updateGlacialMission();saveProgress();showDialogue('A família está reunida!','O filhote encontrou sua mãe. Bento reconhece os chamados e agora sabe que não está sozinho neste mundo gelado.');}});
@@ -532,6 +533,7 @@ function enterCerradoChapter(){
   glacialMode=false;cerradoMode=true;checkpoints.setBiome('cerrado');stamina.reset();journal.visitBiome('cerrado');
   wildlife?.dispose();wildlife=null;glacialMammoths?.dispose();glacialMammoths=null;cerradoWildlife?.dispose();cerradoWildlife=null;
   if(glacialBiome){glacialBiome.dispose();glacialBiome=null;}
+  scene.userData.terrain?.dispose();scene.userData.terrain=createTerrain(scene,{biome:'cerrado',quality:innerWidth<700?.55:1,materialColor:'#b58b58'});
   if(snowParticles){scene.remove(snowParticles);snowParticles.geometry.dispose();snowParticles.material.dispose();snowParticles=null;}
   if(cerradoGate){scene.remove(cerradoGate);cerradoGate.traverse(o=>{o.geometry?.dispose();if(o.material){for(const m of (Array.isArray(o.material)?o.material:[o.material]))m.dispose();}});cerradoGate=null;}
   scene.background.set('#e9c98d');scene.fog.color.set('#d7b77f');scene.fog.density=.009;
