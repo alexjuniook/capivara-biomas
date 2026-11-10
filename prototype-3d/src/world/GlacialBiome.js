@@ -71,5 +71,10 @@ export function buildGlacialBiome(scene, quality = 1) {
     group.position.set(x,0,z);group.userData.index=index;group.userData.baseY=0;
     scene.add(group);added.push(group);crystals.push(group);
   });
-  return { crystals, dispose() { for (const object of added) scene.remove(object); } };
+  return { crystals, dispose() {
+    const geometries=new Set(),materials=new Set();
+    for(const object of added){scene.remove(object);object.traverse?.(child=>{if(child.geometry)geometries.add(child.geometry);if(child.material){for(const material of (Array.isArray(child.material)?child.material:[child.material]))materials.add(material);}});}
+    geometries.forEach(geometry=>geometry.dispose());
+    materials.forEach(material=>material.dispose());
+  } };
 }
