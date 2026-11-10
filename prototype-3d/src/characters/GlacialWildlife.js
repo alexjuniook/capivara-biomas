@@ -47,7 +47,7 @@ export class GlacialWildlife {
         enemy.root.position.x=enemy.home.x+Math.sin(enemy.phase*0.45)*1.8;
         enemy.root.position.z=enemy.home.z+Math.cos(enemy.phase*0.45)*1.8;
       }
-      enemy.root.position.y=Math.abs(Math.sin(enemy.phase*7))*0.045;
+      const stride=Math.sin(enemy.phase*8+(enemy.root.position.distanceTo(enemy.home)<2?0:1));\n      enemy.root.userData.legs?.forEach((leg,index)=>{leg.rotation.z=stride*(index%2===0?1:-1)*0.22;});\n      enemy.root.position.y=Math.abs(Math.sin(enemy.phase*7))*0.045;
       if(distance<1.55&&enemy.attackWait<=0&&this.invulnerable<=0){
         enemy.attackWait=1.25;this.invulnerable=1.6;this.onDamage();
       }
