@@ -187,7 +187,21 @@ function updatePlayer(dt){
   // Simple physical blockers keep the character out of tree trunks and rocks.
   for(const obstacle of obstacles){const p=new THREE.Vector3();obstacle.getWorldPosition(p);const radius=obstacle.geometry?.parameters?.radius||.6;const dx=player.position.x-p.x,dz=player.position.z-p.z;const min=radius+.7;if(dx*dx+dz*dz<min*min&&Math.abs(player.position.y)<1.2){const d=Math.max(.001,Math.hypot(dx,dz));player.position.x=p.x+dx/d*min;player.position.z=p.z+dz/d*min;}}
 }
-function saveProgress(){\n  progressStore.save({collected:fruits.map((fruit,index)=>fruit.userData.collected?index:null).filter(index=>index!==null),talked:companions?.talkedNames||[],portalUnlocked:portal?.unlocked,glacialMode});\n}\nfunction restoreProgress(){\n  const saved=progressStore.load();\n  const collectedSet=new Set(Array.isArray(saved.collected)?saved.collected:[]);\n  fruits.forEach((fruit,index)=>{if(collectedSet.has(index)){fruit.userData.collected=true;fruit.visible=false;collected++;}});\n  fruitCount.textContent=collected;\n  companions?.restoreTalked(Array.isArray(saved.talked)?saved.talked:[]);\n  if(saved.portalUnlocked)portal?.unlock();\n  if(collected===fruits.length&&collected>0&&!saved.portalUnlocked)missionText.textContent='Frutos encontrados! Converse com Tico';\n  else if(collected>0)missionText.textContent='Continue sua jornada pela floresta';\n  if(saved.glacialMode){portal?.unlock();enterGlacialChapter();}\n}\nfunction showDialogue(title, message, button='CONTINUAR') {
+function saveProgress(){
+  progressStore.save({collected:fruits.map((fruit,index)=>fruit.userData.collected?index:null).filter(index=>index!==null),talked:companions?.talkedNames||[],portalUnlocked:portal?.unlocked,glacialMode});
+}
+function restoreProgress(){
+  const saved=progressStore.load();
+  const collectedSet=new Set(Array.isArray(saved.collected)?saved.collected:[]);
+  fruits.forEach((fruit,index)=>{if(collectedSet.has(index)){fruit.userData.collected=true;fruit.visible=false;collected++;}});
+  fruitCount.textContent=collected;
+  companions?.restoreTalked(Array.isArray(saved.talked)?saved.talked:[]);
+  if(saved.portalUnlocked)portal?.unlock();
+  if(collected===fruits.length&&collected>0&&!saved.portalUnlocked)missionText.textContent='Frutos encontrados! Converse com Tico';
+  else if(collected>0)missionText.textContent='Continue sua jornada pela floresta';
+  if(saved.glacialMode){portal?.unlock();enterGlacialChapter();}
+}
+function showDialogue(title, message, button='CONTINUAR') {
   const panel=document.querySelector('#dialogue');
   document.querySelector('#dialogueTitle').textContent=title;
   document.querySelector('#dialogueText').textContent=message;
@@ -198,7 +212,8 @@ function saveProgress(){\n  progressStore.save({collected:fruits.map((fruit,inde
 }
 function showCompanionDialogue(item){
   showDialogue(item.name+' · '+item.species,item.dialogue);
-  if(item.name==='Tico'&&collected===fruits.length){portal?.unlock();missionText.textContent='Portal aberto! Encontre a passagem congelada';}\n  saveProgress();
+  if(item.name==='Tico'&&collected===fruits.length){portal?.unlock();missionText.textContent='Portal aberto! Encontre a passagem congelada';}
+  saveProgress();
 }
 function interact(){
   if(companions?.interact())return;
@@ -212,7 +227,8 @@ function showGlacialInvitation(){
 }
 function enterGlacialChapter(){
   if(glacialMode)return;
-  glacialMode=true;\n  saveProgress();
+  glacialMode=true;
+  saveProgress();
   document.querySelector('#dialogue').classList.add('hidden');
   document.querySelector('.brand small').textContent='Capítulo 2 · Era Glacial';
   missionText.textContent='Explore a passagem congelada';
