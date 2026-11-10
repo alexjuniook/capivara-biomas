@@ -85,19 +85,19 @@ function makeCapybara() {
   const snout=sphere(root,'focinho',.42,[1.14,1.02,0],muzzle,20);snout.scale.set(1.05,.68,.78);
   const nose=sphere(root,'nariz',.15,[1.48,1.16,0],dark,16);nose.scale.set(1,.72,1);
   for(const side of [-1,1]){
-    const ear=sphere(root,'orelha',.2,[.58,1.76,side*.43],fur,16);ear.scale.set(.75,1,.55);
+    const ear=sphere(root,'orelha',.2,[.58,1.76,side*.43],fur,16);ear.scale.set(.75,1,.55);ears.push(ear);
     const inner=sphere(root,'orelha-interna',.105,[.62,1.79,side*.49],muzzle,12);inner.scale.set(.7,1,.45);
-    sphere(root,'olho',.095,[.98,1.42,side*.43],eye,16);
+    eyes.push(sphere(root,'olho',.095,[.98,1.42,side*.43],eye,16));
     sphere(root,'brilho',.027,[1.01,1.46,side*.49],material('#fff2d2',.2),10);
   }
-  const legs=[];
+  const legs=[],ears=[],eyes=[];
   for(const x of [-.65,.65])for(const z of [-.43,.43]){
     const leg=new THREE.Group();leg.position.set(x,.55,z);root.add(leg);
     const limb=new THREE.Mesh(new THREE.CylinderGeometry(.14,.12,.62,12),fur);limb.position.y=-.23;limb.castShadow=true;leg.add(limb);
     const foot=sphere(leg,'pata',.17,[.04,-.5,0],claw,12);foot.scale.set(1,.65,1.1);
     legs.push(leg);
   }
-  root.userData.legs=legs;root.userData.head=head;root.userData.torso=torso;
+  root.userData.legs=legs;root.userData.ears=ears;root.userData.eyes=eyes;root.userData.head=head;root.userData.torso=torso;
   const tail=sphere(root,'cauda',.12,[-1.02,.92,0],fur,12);tail.scale.set(1.35,.55,.55);
   for(const side of [-1,1]){const whisker=new THREE.Mesh(new THREE.CylinderGeometry(.012,.008,.42,5),dark);whisker.position.set(1.34,1.03,side*.2);whisker.rotation.z=-.12;whisker.rotation.x=side*.42;root.add(whisker);}
   root.position.set(0,0,5);root.rotation.y=Math.PI/2;return root;
@@ -202,6 +202,9 @@ function updatePlayer(dt){
   player.userData.legs.forEach((leg,i)=>{leg.rotation.x=moving?Math.sin(walkTime+i*Math.PI)*.42:THREE.MathUtils.damp(leg.rotation.x,0,8,dt);});
   player.userData.torso.scale.y=1+Math.sin(walkTime*2)*.012*(moving?1:0);
   player.userData.head.rotation.z=moving?Math.sin(walkTime)*.025:0;
+  player.userData.ears.forEach((ear,i)=>{ear.rotation.z=Math.sin(walkTime*.7+i)*.045+(moving?-.025:0);});
+  const blink=Math.pow(Math.max(0,Math.sin(performance.now()*.00115)),70);
+  player.userData.eyes.forEach(eye=>{eye.scale.y=1-blink*.88;});
   // Simple physical blockers keep the character out of tree trunks and rocks.
   for(const obstacle of obstacles){const p=new THREE.Vector3();obstacle.getWorldPosition(p);const radius=obstacle.geometry?.parameters?.radius||.6;const dx=player.position.x-p.x,dz=player.position.z-p.z;const min=radius+.7;if(dx*dx+dz*dz<min*min&&Math.abs(player.position.y)<1.2){const d=Math.max(.001,Math.hypot(dx,dz));player.position.x=p.x+dx/d*min;player.position.z=p.z+dz/d*min;}}
 }

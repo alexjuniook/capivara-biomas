@@ -34,6 +34,7 @@ Depois de publicar uma prévia do branch, a página fica em `/prototype-3d/`. Pa
 - Missão do Cerrado: reunir cinco sementes douradas, ajudar o tamanduá-bandeira e registrar encontros com lobo-guará, seriema e tatu-canastra; os encontros são salvos localmente.
 - Fauna do Cerrado com deslocamento, exploração de território e interação por proximidade.
 - Sistema de paisagem sonora procedural com controle de ligar/desligar, sem arquivos externos de áudio.
+- **Pacote de evolução visual (15 melhorias):** céu em gradiente atmosférico; disco solar com halo; nuvens móveis; textura procedural de solo; capim instanciado; flores silvestres; pedrinhas instanciadas; partículas de poeira/flutuantes; ondulações animadas no rio; sombras de maior resolução em desktop; densidade visual escalada para celulares; cauda detalhada da capivara; bigodes; movimento sutil das orelhas; piscadas naturais dos olhos. Os elementos de vegetação e atmosfera são adaptados ao bioma para manter a leitura visual do gelo e do Cerrado.
 - Transição do vale glacial para o Cerrado após concluir o resgate do filhote e reunir os cinco cristais.
 - Salvamento local de frutos, conversas, capítulos, cristais, sementes e ajuda ao tamanduá-bandeira.
 
