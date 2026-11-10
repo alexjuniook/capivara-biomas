@@ -245,16 +245,15 @@ function enterGlacialChapter(){
   scene.traverse(obj=>{if(obj.isMesh&&obj.material?.color&&obj.name!=='fruto'){const color=obj.material.color;if(color.g>.28&&color.r<.5){color.lerp(new THREE.Color('#a9c5c9'),.38);}}});
   glacialBiome=buildGlacialBiome(scene,innerWidth<700?.55:1);
   wildlife=new GlacialWildlife({scene,player,onDamage:takeDamage,onDefeated:()=>showDialogue('Predador afastado!','Você conseguiu espantar o lobo-das-neves. Continue atento: ainda há outro pelo vale.')});
-  glacialMammoths=new GlacialMammoths({scene,player,restored:savedMammothRescued,onRescue:()=>{savedMammothRescued=true;missionText.textContent='Família de Bento reunida!';saveProgress();showDialogue('A família está reunida!','O filhote encontrou sua mãe. Bento reconhece os chamados e agora sabe que não está sozinho neste mundo gelado.');}});
-  if(glacialMammoths.rescued)missionText.textContent='Família de Bento reunida!';
-  else missionText.textContent='Encontre o filhote de mamute e pressione E';
+  glacialMammoths=new GlacialMammoths({scene,player,restored:savedMammothRescued,onRescue:()=>{savedMammothRescued=true;updateGlacialMission();saveProgress();showDialogue('A família está reunida!','O filhote encontrou sua mãe. Bento reconhece os chamados e agora sabe que não está sozinho neste mundo gelado.');}});
+
   iceCrystals=glacialBiome.crystals||[];
   iceCrystals.forEach(crystal=>{if(savedGlacialCrystals.includes(crystal.userData.index)){crystal.userData.collected=true;crystal.visible=false;}});
   glacialCrystals=iceCrystals.filter(crystal=>crystal.userData.collected).length;
   document.querySelector('#fruitStat')?.classList.add('hidden');
   document.querySelector('#iceStat')?.classList.remove('hidden');
   document.querySelector('#iceCount').textContent=glacialCrystals;
-  missionText.textContent=glacialCrystals>=5?'Cristais reunidos! Explore o vale':'Encontre os cristais azuis: '+glacialCrystals+'/5';
+  updateGlacialMission();
   snowDummy=new THREE.Object3D();
   const snowCount=innerWidth<700?180:420;
   snowParticles=new THREE.InstancedMesh(new THREE.SphereGeometry(.035,5,4),new THREE.MeshBasicMaterial({color:'#f4fbff'}),snowCount);
@@ -276,6 +275,18 @@ function takeDamage(){
   if(lives===0){lives=3;heartsText.textContent='♥♥♥';showDialogue('Você descansou na cabana','Os companheiros ajudaram a capivara a se recuperar. Suas descobertas continuam salvas.');}
   else showDialogue('Cuidado com as presas!','Um lobo-das-neves alcançou você. Corra, pule ou use ASSUSTAR para se defender.');
 }
+function updateGlacialMission(){
+  if(!glacialMode)return;
+  if(glacialCrystals>=5&&glacialMammoths?.rescued){
+    missionText.textContent='Vale salvo! As duas missões foram concluídas';
+    return;
+  }
+  if(!glacialMammoths?.rescued){
+    missionText.textContent='Resgate o filhote de mamute · '+(glacialCrystals>=5?'Cristais 5/5':'Cristais '+glacialCrystals+'/5');
+  }else{
+    missionText.textContent='Encontre os cristais azuis · '+glacialCrystals+'/5';
+  }
+}
 function updateGlacialCollectibles(dt){
   if(!glacialMode||!iceCrystals.length)return;
   for(const crystal of iceCrystals){
@@ -285,9 +296,9 @@ function updateGlacialCollectibles(dt){
     if(crystal.position.distanceTo(player.position.clone().add(new THREE.Vector3(0,1,0)))<1.8){
       crystal.userData.collected=true;crystal.visible=false;glacialCrystals++;
       document.querySelector('#iceCount').textContent=glacialCrystals;
-      missionText.textContent=glacialCrystals>=5?'Cristais reunidos! O vale revelou seu segredo':'Encontre os cristais azuis: '+glacialCrystals+'/5';
+      updateGlacialMission();
       saveProgress();
-      if(glacialCrystals===5)showDialogue('Missão glacial concluída!','Você reuniu os cinco cristais ancestrais. A luz deles revela marcas antigas no gelo — a jornada continua para além deste vale.');
+      if(glacialCrystals===5){if(glacialMammoths?.rescued)showDialogue('O vale foi salvo!','Os cinco cristais foram reunidos e a família de mamutes está segura. Uma antiga luz desperta sob o gelo. Este capítulo está completo!');else showDialogue('Os cristais despertaram!','Você reuniu os cinco cristais. Falta encontrar o filhote perdido e reunir a família de Bento para concluir o vale.');}
     }
   }
 }
