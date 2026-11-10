@@ -135,7 +135,7 @@ function createWorld() {
 }
 function setup() {
   renderer=new THREE.WebGLRenderer({antialias:innerWidth>700,alpha:false,powerPreference:'low-power'});
-  renderer.setPixelRatio(Math.min(devicePixelRatio,1.5));renderer.setSize(innerWidth,innerHeight);
+  renderer.setPixelRatio(Math.min(devicePixelRatio,matchMedia('(pointer:coarse)').matches?1.1:1.5));renderer.setSize(innerWidth,innerHeight);
   renderer.shadowMap.enabled=innerWidth>650;renderer.shadowMap.type=THREE.PCFSoftShadowMap;
   renderer.outputColorSpace=THREE.SRGBColorSpace;renderer.toneMapping=THREE.ACESFilmicToneMapping;renderer.toneMappingExposure=1.15;
   viewport.appendChild(renderer.domElement);
