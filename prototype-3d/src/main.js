@@ -39,7 +39,7 @@ const right = new THREE.Vector3();
 const move = new THREE.Vector3();
 const playerVelocity = new THREE.Vector3();
 let verticalVelocity = 0, grounded = true, jumpWasDown = false;
-let walkTime = 0;
+let walkTime = 0, footstepTimer = 0, footstepDust = null, footstepDummy = null, footstepLife = [];
 
 function material(color, roughness=0.9, extra={}) {
   return new THREE.MeshStandardMaterial({color, roughness, ...extra});
@@ -104,6 +104,9 @@ function makeCapybara() {
   root.userData.legs=legs;root.userData.ears=ears;root.userData.eyes=eyes;root.userData.head=head;root.userData.torso=torso;
   const tail=sphere(root,'cauda',.12,[-1.02,.92,0],fur,12);tail.scale.set(1.35,.55,.55);
   for(const side of [-1,1]){const whisker=new THREE.Mesh(new THREE.CylinderGeometry(.012,.008,.42,5),dark);whisker.position.set(1.34,1.03,side*.2);whisker.rotation.z=-.12;whisker.rotation.x=side*.42;root.add(whisker);}
+  // Small cheek tufts and subtle fur ridges give the silhouette more character.
+  for(let i=0;i<5;i++){const tuft=new THREE.Mesh(new THREE.ConeGeometry(.075,.22,5),furLight);tuft.position.set(.15+i*.18,1.55,-.47);tuft.rotation.z=-.55;root.add(tuft);}
+  root.userData.tail=tail;root.userData.nose=nose;root.userData.rootHeight=0;
   root.position.set(0,0,5);root.rotation.y=Math.PI/2;return root;
 }
 function makeFruit(x,z) {
@@ -139,6 +142,7 @@ function createWorld() {
   // distant canopy silhouettes
   for(let i=0;i<14;i++){const c=sphere(scene,'dossel-distante',5,[Math.sin(i*9)*28,10+Math.random()*5,-50-i*3],material(i%2?'#28684c':'#347b53'),12);c.scale.set(1.5,1,1.4);}
   player=makeCapybara();
+  createFootstepDust();
   ambientLife=new AmbientLife({scene,sun,hemisphere:hemisphereLight,quality:innerWidth<700?.55:1});
   companions=new CompanionSystem({scene,player,onTalk:showCompanionDialogue});
   portal=new GlacialPortal({scene,onEnter:showGlacialInvitation});
@@ -204,6 +208,37 @@ function bindControls(){
   document.querySelector('#enterIceBtn')?.addEventListener('click',enterGlacialChapter);
   document.querySelector('#closeDialogueBtn')?.addEventListener('click',()=>document.querySelector('#dialogue').classList.add('hidden'));
 }
+function createFootstepDust(){
+  const count=14;
+  const geometry=new THREE.SphereGeometry(.075,6,5);
+  const mat=new THREE.MeshBasicMaterial({color:'#d8c49a',transparent:true,opacity:.32,depthWrite:false});
+  footstepDust=new THREE.InstancedMesh(geometry,mat,count);
+  footstepDust.frustumCulled=false;footstepDummy=new THREE.Object3D();
+  footstepLife=Array(count).fill(0);
+  for(let i=0;i<count;i++){footstepDummy.position.set(0,-20,0);footstepDummy.scale.setScalar(0);footstepDummy.updateMatrix();footstepDust.setMatrixAt(i,footstepDummy.matrix);}
+  footstepDust.instanceMatrix.needsUpdate=true;scene.add(footstepDust);
+}
+function updateFootstepDust(dt,moving){
+  if(!footstepDust)return;
+  footstepTimer-=dt;
+  if(moving&&keys.run&&grounded&&footstepTimer<=0){
+    footstepTimer=.16;
+    let slot=footstepLife.findIndex(life=>life<=0);
+    if(slot<0)slot=footstepLife.indexOf(Math.min(...footstepLife));
+    footstepLife[slot]=.55;
+    footstepDust.userData.positions??=Array.from({length:footstepLife.length},()=>new THREE.Vector3());
+    footstepDust.userData.positions[slot].set(player.position.x+(Math.random()-.5)*.45,.08,player.position.z+.25);
+  }
+  const positions=footstepDust.userData.positions||[];
+  for(let i=0;i<footstepLife.length;i++){
+    footstepLife[i]=Math.max(0,footstepLife[i]-dt);
+    const life=footstepLife[i],p=positions[i]||new THREE.Vector3(0,-20,0);
+    if(life>0){p.y+=dt*.28;footstepDummy.position.copy(p);footstepDummy.scale.setScalar((life/.55)*.8);}
+    else{footstepDummy.position.set(0,-20,0);footstepDummy.scale.setScalar(0);}
+    footstepDummy.updateMatrix();footstepDust.setMatrixAt(i,footstepDummy.matrix);
+  }
+  footstepDust.instanceMatrix.needsUpdate=true;
+}
 function updatePlayer(dt){
   const cameraForward=new THREE.Vector3();camera.getWorldDirection(cameraForward);cameraForward.y=0;cameraForward.normalize();
   right.crossVectors(cameraForward,up).normalize();
@@ -226,8 +261,13 @@ function updatePlayer(dt){
   const moving=move.lengthSq()>.02;
   walkTime+=dt*(keys.run?13:8);
   player.userData.legs.forEach((leg,i)=>{leg.rotation.x=moving?Math.sin(walkTime+i*Math.PI)*.42:THREE.MathUtils.damp(leg.rotation.x,0,8,dt);});
-  player.userData.torso.scale.y=1+Math.sin(walkTime*2)*.012*(moving?1:0);
-  player.userData.head.rotation.z=moving?Math.sin(walkTime)*.025:0;
+  const breath=Math.sin(walkTime*.45)*.012;
+  player.userData.torso.scale.y=.67+breath+(moving?Math.abs(Math.sin(walkTime*2))*.025:0);
+  player.userData.head.rotation.z=(moving?Math.sin(walkTime)*.045:0)+Math.sin(performance.now()*.0007)*.012;
+  player.userData.head.rotation.x=moving?Math.sin(walkTime*.5)*.025:0;
+  player.userData.tail.rotation.z=Math.sin(walkTime*.75)*.16+(moving?.06:0);
+  player.userData.legs.forEach((leg,i)=>{leg.rotation.z=moving?Math.sin(walkTime+i*Math.PI)*.035:THREE.MathUtils.damp(leg.rotation.z,0,7,dt);});
+  updateFootstepDust(dt,moving);
   player.userData.ears.forEach((ear,i)=>{ear.rotation.z=Math.sin(walkTime*.7+i)*.045+(moving?-.025:0);});
   const blink=Math.pow(Math.max(0,Math.sin(performance.now()*.00115)),70);
   player.userData.eyes.forEach(eye=>{eye.scale.y=1-blink*.88;});
