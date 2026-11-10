@@ -1,0 +1,30 @@
+name: Prototype 3D checks
+
+on:
+  push:
+    branches:
+      - feature/**
+  pull_request:
+    branches:
+      - main
+
+permissions:
+  contents: read
+
+jobs:
+  syntax-and-progress:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Check JavaScript syntax
+        run: |
+          find prototype-3d/src -name '*.js' -print0 | while IFS= read -r -d '' file; do
+            node --experimental-default-type=module --check "$file"
+          done
+      - name: Test local progress storage
+        run: node --experimental-default-type=module --test prototype-3d/tests/*.test.mjs
