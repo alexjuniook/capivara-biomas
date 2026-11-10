@@ -1,4 +1,4 @@
-# Capivara — O Segredo das Duas Eras
+# Capivara — O Segredo das Três Eras
 
 ## Protótipo 3D isolado
 
@@ -30,18 +30,21 @@ Depois de publicar uma prévia do branch, a página fica em `/prototype-3d/`. Pa
 - Dois lobos-das-neves com patrulha, perseguição e ataque; a capivara pode correr, pular e assustá-los duas vezes para afastá-los. O HUD mostra vidas.
 - Família de mamutes na Era Glacial: encontre o filhote perdido e pressione E ou CONVERSAR para reuni-lo à mãe; o filhote passa a acompanhar o adulto e o resgate fica salvo.
 - Objetivo glacial integrado: reunir os cinco cristais e resgatar o filhote; o HUD prioriza a tarefa pendente e reconhece a conclusão do vale quando as duas metas forem cumpridas.
-- Salvamento local de frutos, conversas, desbloqueio do capítulo glacial e cristais ancestrais coletados.
+- Terceiro capítulo no Cerrado brasileiro, com chapadas, veredas, ipês, buritis, riacho e vegetação de campo.
+- Missão do Cerrado: reunir cinco sementes douradas e ajudar um tamanduá-bandeira; o progresso do capítulo é salvo localmente.
+- Transição do vale glacial para o Cerrado após concluir o resgate do filhote e reunir os cinco cristais.
+- Salvamento local de frutos, conversas, capítulos, cristais, sementes e ajuda ao tamanduá-bandeira.
 
 ### Limitações conhecidas
 
-Este é um primeiro protótipo jogável, não o jogo final. A capivara ainda usa geometria procedural, sem modelo GLB nem animações profissionais; a física e as colisões são simplificadas; o sistema de vidas e progressão ainda não está completo; não há áudio, combate ou uma campanha completa. O progresso local cobre a coleta, conversas e o desbloqueio do capítulo; ainda não há sincronização entre dispositivos nem um mapa glacial com missões próprias. A transição atual é uma primeira região demonstrativa do segundo capítulo, ainda sem fauna glacial variada; há lobos-das-neves e uma família de mamutes com missão de resgate, além da coleta de cinco cristais. Os pássaros e borboletas são elementos ambientais simples, não fauna com IA ou rotinas ecológicas completas. O protótipo depende de conexão com a internet para carregar Three.js do CDN.
+Este é um primeiro protótipo jogável, não o jogo final. A capivara ainda usa geometria procedural, sem modelo GLB nem animações profissionais; a física e as colisões são simplificadas; o sistema de vidas e progressão ainda não está completo; não há áudio, combate ou uma campanha completa. O progresso local cobre a coleta, conversas e o desbloqueio do capítulo; ainda não há sincronização entre dispositivos nem um mapa glacial com missões próprias. O terceiro capítulo é uma região demonstrativa do Cerrado; o tamanduá-bandeira é um personagem de missão, ainda sem comportamento ecológico avançado. Os pássaros e borboletas são elementos ambientais simples, não fauna com IA ou rotinas ecológicas completas. O protótipo depende de conexão com a internet para carregar Three.js do CDN.
 
 A compatibilidade e o desempenho ainda precisam ser verificados em aparelhos reais, especialmente no Samsung A07. O branch é de desenvolvimento e não foi mesclado à produção nem implantado no Cloudflare.
 
 ## Próximos marcos
 
 1. Melhorar personagem, animações e colisões.
-2. Adicionar missões, NPCs originais e inimigos.
-3. Criar transição narrativa para o mundo glacial.
+2. Criar fauna com rotinas e comportamento mais realistas.
+3. Adicionar áudio, trilha e efeitos ambientais.
 4. Otimizar qualidade adaptativa e testar toque/desempenho em Android.
-5. Só então preparar uma prévia separada para validação antes de qualquer troca da produção.
+5. Preparar uma prévia separada para validação antes de qualquer troca da produção.
