@@ -66,5 +66,5 @@ export class CerradoWildlife {
   }
   get observedNames(){return this.animals.filter(a=>a.observed).map(a=>a.name);}
   restore(names=[]){const set=new Set(names);for(const animal of this.animals)animal.observed=set.has(animal.name);}
-  dispose(){for(const animal of this.animals)this.scene.remove(animal.root);this.animals=[];}
+  dispose(){\n    const geometries=new Set(),materials=new Set();\n    for(const animal of this.animals){this.scene.remove(animal.root);animal.root.traverse(child=>{if(child.geometry)geometries.add(child.geometry);if(child.material)materials.add(child.material);});}\n    geometries.forEach(g=>g.dispose());materials.forEach(m=>m.dispose());this.animals=[];\n  }
 }
