@@ -4,13 +4,13 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 const DEFAULTS = {
   mode: 'thirdPerson',
   sensitivity: 0.85,
-  distance: 7.5,
-  height: 2.7,
+  distance: 6.8,
+  height: 2.45,
   minDistance: 2.2,
   maxDistance: 18,
   collisionPadding: 0.35,
-  transitionSpeed: 7,
-  cinematicSpeed: 0.22,
+  transitionSpeed: 8.5,
+  cinematicSpeed: 0.16,
   closeDistance: 3.1,
   closeHeight: 1.65
 };
