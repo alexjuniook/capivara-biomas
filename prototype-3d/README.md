@@ -11,7 +11,7 @@ Depois de publicar uma prévia do branch, a página fica em `/prototype-3d/`. Pa
 ### Controles
 
 - Teclado: WASD ou setas para andar; Espaço para pular; Shift para correr.
-- Celular: joystick virtual, botão PULAR e botão CORRER.
+- Celular: joystick virtual, botões PULAR, CORRER, CONVERSAR e ASSUSTAR.
 - Câmera: Livre 360°, Terceira pessoa, Próxima e Cinematográfica.
 - Mouse/toque: arraste para orbitar e use roda/pinça para zoom nos modos interativos.
 
@@ -27,6 +27,7 @@ Depois de publicar uma prévia do branch, a página fica em `/prototype-3d/`. Pa
 - Companheiros originais Tico (preguiça), Brasa (felino-dentes-de-sabre) e Bento (mamute jovem), com aproximação e diálogos; Tico acompanha a capivara.
 - Missão de coleta dos oito frutos e portal ancestral que exige conversar com Tico para ser ativado.
 - Primeira transição jogável para a Era Glacial, com montanhas, lago congelado, pinheiros nevados, neve em movimento e missão para encontrar cinco cristais ancestrais.
+- Dois lobos-das-neves com patrulha, perseguição e ataque; a capivara pode correr, pular e assustá-los duas vezes para afastá-los. O HUD mostra vidas.
 - Salvamento local de frutos, conversas, desbloqueio do capítulo glacial e cristais ancestrais coletados.
 
 ### Limitações conhecidas
