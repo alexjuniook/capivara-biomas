@@ -234,6 +234,13 @@ function showCompanionDialogue(item){
 function interact(){
   if(glacialMode&&cerradoGate&&player.position.distanceTo(cerradoGate.position)<4){showDialogue('Portal dourado','O vale foi salvo. Atravesse para conhecer o Cerrado brasileiro.','ATRAVESSAR');document.querySelector('#closeDialogueBtn').onclick=enterCerradoChapter;return;}
   if(glacialMode&&glacialMammoths?.interact())return;
+  if(cerradoMode&&cerradoBiome?.anteater.position.distanceTo(player.position)<3.8){
+    anteaterHelped=true;savedAnteaterHelped=true;saveProgress();
+    const seen=cerradoWildlife?.observedNames.length||savedCerradoAnimals.length;
+    updateCerradoMission();
+    if(!(cerradoSeedCount>=5&&seen>=3))showDialogue('Tamanduá-bandeira ajudado!','Você acompanhou o tamanduá até uma área segura. Continue reunindo as sementes douradas e observando os animais do Cerrado.');
+    return;
+  }
   if(cerradoMode&&cerradoWildlife?.interact())return;
   if(companions?.interact())return;
   if(portal?.unlocked&&player.position.distanceTo(portal.root.position)<4){showGlacialInvitation();return;}
