@@ -23,11 +23,15 @@ Depois de publicar uma prévia do branch, a página fica em `/prototype-3d/`. Pa
 - Movimento, corrida, salto, limites da área e colisões simples com obstáculos.
 - Sistema de quatro câmeras em `src/camera/CameraDirector.js`.
 - Interface responsiva para desktop e celular.
-- Vida ambiente leve: pássaros em voo, borboletas, ciclo de iluminação dia/noite e chuva instanciada com qualidade reduzida em telas pequenas.\n- Companheiros originais Tico (preguiça), Brasa (felino-dentes-de-sabre) e Bento (mamute jovem), com aproximação e diálogos; Tico acompanha a capivara.\n- Missão de coleta dos oito frutos e portal ancestral que exige conversar com Tico para ser ativado.\n- Primeira transição visual para a Era Glacial, com neve, névoa fria e cristais de gelo.
+- Vida ambiente leve: pássaros em voo, borboletas, ciclo de iluminação dia/noite e chuva instanciada com qualidade reduzida em telas pequenas.
+- Companheiros originais Tico (preguiça), Brasa (felino-dentes-de-sabre) e Bento (mamute jovem), com aproximação e diálogos; Tico acompanha a capivara.
+- Missão de coleta dos oito frutos e portal ancestral que exige conversar com Tico para ser ativado.
+- Primeira transição visual para a Era Glacial, com montanhas, lago congelado, pinheiros nevados, cristais, névoa fria e neve em movimento.
+- Salvamento local de frutos coletados, conversas com companheiros e desbloqueio do capítulo glacial.
 
 ### Limitações conhecidas
 
-Este é um primeiro protótipo jogável, não o jogo final. A capivara ainda usa geometria procedural, sem modelo GLB nem animações profissionais; a física e as colisões são simplificadas; o sistema de vidas e progressão ainda não está completo; não há áudio, salvamento de campanha, inimigos com combate ou uma região glacial completa nesta etapa. A transição atual é uma primeira demonstração visual do segundo capítulo, ainda sem mapa, missões ou fauna glacial próprios. Os pássaros e borboletas são elementos ambientais simples, não fauna com IA ou rotinas ecológicas completas. O protótipo depende de conexão com a internet para carregar Three.js do CDN.
+Este é um primeiro protótipo jogável, não o jogo final. A capivara ainda usa geometria procedural, sem modelo GLB nem animações profissionais; a física e as colisões são simplificadas; o sistema de vidas e progressão ainda não está completo; não há áudio, combate ou uma campanha completa. O progresso local cobre a coleta, conversas e o desbloqueio do capítulo; ainda não há sincronização entre dispositivos nem um mapa glacial com missões próprias. A transição atual é uma primeira região demonstrativa do segundo capítulo, ainda sem missões adicionais, fauna glacial ou combate próprios. Os pássaros e borboletas são elementos ambientais simples, não fauna com IA ou rotinas ecológicas completas. O protótipo depende de conexão com a internet para carregar Three.js do CDN.
 
 A compatibilidade e o desempenho ainda precisam ser verificados em aparelhos reais, especialmente no Samsung A07. O branch é de desenvolvimento e não foi mesclado à produção nem implantado no Cloudflare.
 
