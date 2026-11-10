@@ -4,6 +4,7 @@ import { AmbientLife } from './world/AmbientLife.js';
 import { CompanionSystem } from './characters/CompanionSystem.js';
 import { GlacialPortal } from './world/GlacialPortal.js';
 import { buildGlacialBiome } from './world/GlacialBiome.js';
+import { buildCerradoBiome } from './world/CerradoBiome.js';
 import { ProgressStore } from './systems/ProgressStore.js';
 import { GlacialWildlife } from './characters/GlacialWildlife.js';
 import { GlacialMammoths } from './characters/GlacialMammoths.js';
@@ -17,7 +18,7 @@ const missionText = document.querySelector('#missionText');
 const heartsText = document.querySelector('#hearts');
 
 let renderer, scene, camera, director, player, clock, ambientLife, companions, portal, wildlife, glacialMammoths;
-let glacialMode = false, snowParticles = null, snowDummy = null, snowPositions = [], glacialBiome = null, iceCrystals = [], glacialCrystals = 0, savedGlacialCrystals = [], savedMammothRescued = false;
+let glacialMode = false, cerradoMode = false, snowParticles = null, snowDummy = null, snowPositions = [], glacialBiome = null, iceCrystals = [], glacialCrystals = 0, savedGlacialCrystals = [], savedMammothRescued = false, cerradoBiome = null, cerradoSeeds = [], cerradoSeedCount = 0, savedCerradoSeeds = [], savedAnteaterHelped = false, anteaterHelped = false, cerradoGate = null;
 const progressStore = new ProgressStore();
 let started = false, collected = 0, lives = 3;
 const keys = { forward:0, right:0, jump:false, run:false };
@@ -191,12 +192,12 @@ function updatePlayer(dt){
   for(const obstacle of obstacles){const p=new THREE.Vector3();obstacle.getWorldPosition(p);const radius=obstacle.geometry?.parameters?.radius||.6;const dx=player.position.x-p.x,dz=player.position.z-p.z;const min=radius+.7;if(dx*dx+dz*dz<min*min&&Math.abs(player.position.y)<1.2){const d=Math.max(.001,Math.hypot(dx,dz));player.position.x=p.x+dx/d*min;player.position.z=p.z+dz/d*min;}}
 }
 function saveProgress(){
-  progressStore.save({collected:fruits.map((fruit,index)=>fruit.userData.collected?index:null).filter(index=>index!==null),talked:companions?.talkedNames||[],portalUnlocked:portal?.unlocked,glacialMode,glacialCrystals:iceCrystals.length?iceCrystals.filter(c=>c.userData.collected).map(c=>c.userData.index):savedGlacialCrystals,mammothRescued:glacialMammoths?glacialMammoths.rescued:savedMammothRescued});
+  progressStore.save({collected:fruits.map((fruit,index)=>fruit.userData.collected?index:null).filter(index=>index!==null),talked:companions?.talkedNames||[],portalUnlocked:portal?.unlocked,glacialMode,glacialCrystals:iceCrystals.length?iceCrystals.filter(c=>c.userData.collected).map(c=>c.userData.index):savedGlacialCrystals,mammothRescued:glacialMammoths?glacialMammoths.rescued:savedMammothRescued,cerradoMode,cerradoSeeds:cerradoSeeds.length?cerradoSeeds.filter(s=>s.userData.collected).map(s=>s.userData.index):savedCerradoSeeds,anteaterHelped});
 }
 function restoreProgress(){
   const saved=progressStore.load();
   savedGlacialCrystals=Array.isArray(saved.glacialCrystals)?saved.glacialCrystals:[];
-  savedMammothRescued=Boolean(saved.mammothRescued);
+  savedMammothRescued=Boolean(saved.mammothRescued);\n  savedCerradoSeeds=Array.isArray(saved.cerradoSeeds)?saved.cerradoSeeds:[];\n  savedAnteaterHelped=Boolean(saved.anteaterHelped);\n  anteaterHelped=savedAnteaterHelped;
   glacialCrystals=savedGlacialCrystals.length;
   const collectedSet=new Set(Array.isArray(saved.collected)?saved.collected:[]);
   fruits.forEach((fruit,index)=>{if(collectedSet.has(index)){fruit.userData.collected=true;fruit.visible=false;collected++;}});
@@ -206,7 +207,7 @@ function restoreProgress(){
   if(collected===fruits.length&&collected>0&&!portal?.unlocked)missionText.textContent='Frutos encontrados! Converse com Tico';
   else if(portal?.unlocked)missionText.textContent='Portal aberto! Encontre a passagem congelada';
   else if(collected>0)missionText.textContent='Continue sua jornada pela floresta';
-  if(saved.glacialMode){portal?.unlock();enterGlacialChapter();}
+  if(saved.glacialMode||saved.cerradoMode){portal?.unlock();enterGlacialChapter();if(saved.cerradoMode)enterCerradoChapter();}
 }
 function showDialogue(title, message, button='CONTINUAR') {
   const panel=document.querySelector('#dialogue');
@@ -223,7 +224,7 @@ function showCompanionDialogue(item){
   saveProgress();
 }
 function interact(){
-  if(glacialMode&&glacialMammoths?.interact())return;
+  if(glacialMode&&cerradoGate&&player.position.distanceTo(cerradoGate.position)<4){showDialogue('Portal dourado','O vale foi salvo. Atravesse para conhecer o Cerrado brasileiro.','ATRAVESSAR');document.querySelector('#closeDialogueBtn').onclick=enterCerradoChapter;return;}\n  if(glacialMode&&glacialMammoths?.interact())return;
   if(companions?.interact())return;
   if(portal?.unlocked&&player.position.distanceTo(portal.root.position)<4){showGlacialInvitation();return;}
   showDialogue('A floresta está cheia de segredos','Chegue perto de Tico, Brasa ou Bento e pressione E para conversar. No celular, use o botão CONVERSAR.');
@@ -287,7 +288,7 @@ function updateGlacialMission(){
     missionText.textContent='Encontre os cristais azuis · '+glacialCrystals+'/5';
   }
 }
-function updateGlacialCollectibles(dt){
+function createCerradoGate(){\n  if(cerradoGate)return;\n  cerradoGate=new THREE.Group();cerradoGate.position.set(0,0,-74);\n  const stone=new THREE.MeshStandardMaterial({color:'#80633c',roughness:.85});\n  const glow=new THREE.MeshStandardMaterial({color:'#f3c86b',emissive:'#b9791e',emissiveIntensity:.9,roughness:.25});\n  const arch=new THREE.Mesh(new THREE.TorusGeometry(2.15,.3,10,32),stone);arch.position.y=2.6;arch.scale.y=1.25;cerradoGate.add(arch);\n  const ring=new THREE.Mesh(new THREE.TorusGeometry(1.82,.1,8,32),glow);ring.position.y=2.6;ring.scale.y=1.25;cerradoGate.add(ring);\n  scene.add(cerradoGate);\n}\nfunction enterCerradoChapter(){\n  if(cerradoMode)return;\n  glacialMode=false;cerradoMode=true;\n  wildlife?.dispose();wildlife=null;glacialMammoths?.dispose();glacialMammoths=null;\n  if(glacialBiome){glacialBiome.dispose();glacialBiome=null;}\n  if(snowParticles){scene.remove(snowParticles);snowParticles.geometry.dispose();snowParticles.material.dispose();snowParticles=null;}\n  if(cerradoGate){scene.remove(cerradoGate);cerradoGate=null;}\n  scene.background.set('#e9c98d');scene.fog.color.set('#d7b77f');scene.fog.density=.009;\n  cerradoBiome=buildCerradoBiome(scene,innerWidth<700?.55:1);\n  cerradoSeeds=cerradoBiome.seeds;\n  cerradoSeeds.forEach(seed=>{if(savedCerradoSeeds.includes(seed.userData.index)){seed.userData.collected=true;seed.visible=false;}});\n  cerradoSeedCount=cerradoSeeds.filter(seed=>seed.userData.collected).length;\n  anteaterHelped=savedAnteaterHelped;\n  player.position.set(0,0,5);\n  document.querySelector('.brand small').textContent='Capítulo 3 · Cerrado brasileiro';\n  document.querySelector('#iceStat')?.classList.add('hidden');\n  document.querySelector('#fruitStat')?.classList.add('hidden');\n  showDialogue('A terceira era: o Cerrado','Depois do gelo, a capivara encontra um Brasil de chapadas, veredas e ipês. Encontre cinco sementes douradas e ajude o tamanduá-bandeira.');\n  updateCerradoMission();saveProgress();\n}\nfunction updateCerradoMission(){\n  if(!cerradoMode)return;\n  if(cerradoSeedCount>=5&&anteaterHelped)missionText.textContent='Vereda restaurada! Capítulo do Cerrado concluído';\n  else if(cerradoSeedCount<5)missionText.textContent='Encontre as sementes douradas · '+cerradoSeedCount+'/5'+(anteaterHelped?' · Tamanduá ajudado':'');\n  else missionText.textContent='Ajude o tamanduá-bandeira perto das árvores · Sementes 5/5';\n}\nfunction updateCerradoCollectibles(dt){\n  if(!cerradoMode||!cerradoSeeds.length)return;\n  for(const seed of cerradoSeeds){if(seed.userData.collected)continue;seed.rotation.y+=dt*.9;seed.position.y=seed.userData.baseY+Math.sin(performance.now()*.002+seed.userData.index)*.13;if(seed.position.distanceTo(player.position.clone().add(new THREE.Vector3(0,1,0)))<1.7){seed.userData.collected=true;seed.visible=false;cerradoSeedCount++;updateCerradoMission();saveProgress();if(cerradoSeedCount===5)showDialogue('As sementes douradas reunidas!','A vereda começa a florescer novamente. Falta ajudar o tamanduá-bandeira para concluir este capítulo.');}}\n}\nfunction updateGlacialCollectibles(dt){
   if(!glacialMode||!iceCrystals.length)return;
   for(const crystal of iceCrystals){
     if(crystal.userData.collected)continue;
@@ -304,7 +305,7 @@ function updateGlacialCollectibles(dt){
 }
 function animate(){
   requestAnimationFrame(animate);const dt=Math.min(clock.getDelta(),.04);
-  if(started){updatePlayer(dt);updateCollectibles(dt);updateGlacialCollectibles(dt);wildlife?.update(dt);glacialMammoths?.update(dt);companions?.update(dt);portal?.update(dt,player);}
+  if(started){updatePlayer(dt);updateCollectibles(dt);updateGlacialCollectibles(dt);updateCerradoCollectibles(dt);wildlife?.update(dt);glacialMammoths?.update(dt);companions?.update(dt);portal?.update(dt,player);if(cerradoGate&&glacialMode&&player.position.distanceTo(cerradoGate.position)<3.4){showDialogue('Uma nova paisagem espera','O vale está salvo. Pressione E para atravessar o portal dourado e explorar o Cerrado brasileiro.','ATRAVESSAR');document.querySelector('#closeDialogueBtn').onclick=enterCerradoChapter;cerradoGate=null;}}
   if(ambientLife)ambientLife.update(dt,player);
   if(glacialMode&&snowParticles){for(let i=0;i<snowPositions.length;i++){const p=snowPositions[i];p.y-=dt*(1.4+(i%5)*.25);p.x+=Math.sin(performance.now()*.0004+i)*dt*.25;if(p.y<0)p.set(player.position.x+(Math.random()-.5)*34,12+Math.random()*8,player.position.z-Math.random()*45);snowDummy.position.copy(p);snowDummy.updateMatrix();snowParticles.setMatrixAt(i,snowDummy.matrix);}snowParticles.instanceMatrix.needsUpdate=true;}
   director.update(dt);
