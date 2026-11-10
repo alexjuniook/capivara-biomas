@@ -22,8 +22,21 @@ export class GlacialWildlife {
     part(root,new THREE.SphereGeometry(0.075,8,8),'#f4d66b',[0.78,1.12,-0.24]);
     part(root,new THREE.SphereGeometry(0.075,8,8),'#f4d66b',[0.78,1.12,0.24]);
     part(root,new THREE.ConeGeometry(0.11,0.26,7),'#e9e5df',[0.82,0.82,0]);
-    for(const px of [-0.38,0.38])for(const pz of [-0.38,0.38])
-      part(root,new THREE.CylinderGeometry(0.09,0.11,0.48,7),'#53636e',[px,0.25,pz]);
+    const legs=[];
+    for(const px of [-0.38,0.38])for(const pz of [-0.38,0.38]){
+      const leg=new THREE.Group();leg.position.set(px,.48,pz);root.add(leg);
+      part(leg,new THREE.CylinderGeometry(0.085,0.11,0.36,8),'#53636e',[0,-.16,0]);
+      part(leg,new THREE.SphereGeometry(.13,8,7),'#39464e',[.045,-.34,.015],[1.25,.55,1.1]);
+      legs.push(leg);
+    }
+    const tail=part(root,new THREE.ConeGeometry(.12,.72,8),'#53636e',[-.91,.78,0],[.8,1.1,.8]);
+    tail.rotation.z=Math.PI/2;
+    // Shoulder ruff and cheek tufts break up the smooth primitive silhouette.
+    for(let i=0;i<7;i++){
+      const tuft=part(root,new THREE.ConeGeometry(.11,.34,6),'#8496a0',[-.28+i*.12,1.12,-.48],[.8,1,.8]);
+      tuft.rotation.z=-.45;
+    }
+    root.userData.legs=legs;root.userData.tail=tail;
     root.position.set(x,0,z);scene.add(root);
     this.enemies.push({root,hits:0,phase:Math.random()*6,attackWait:0,alive:true,home:new THREE.Vector3(x,0,z)});
   }
@@ -50,6 +63,7 @@ export class GlacialWildlife {
       const stride=Math.sin(enemy.phase*8+(enemy.root.position.distanceTo(enemy.home)<2?0:1));
       enemy.root.userData.legs?.forEach((leg,index)=>{leg.rotation.z=stride*(index%2===0?1:-1)*0.22;});
       enemy.root.position.y=Math.abs(Math.sin(enemy.phase*7))*0.045;
+      if(enemy.root.userData.tail)enemy.root.userData.tail.rotation.z=Math.PI/2+Math.sin(enemy.phase*2.2)*.16;
       if(distance<1.55&&enemy.attackWait<=0&&this.invulnerable<=0){
         enemy.attackWait=1.25;this.invulnerable=1.6;this.onDamage();
       }
