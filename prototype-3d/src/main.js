@@ -15,6 +15,7 @@ import { WorldAtmosphere } from './world/WorldAtmosphere.js';
 import { GameSettings, QUALITY } from './systems/GameSettings.js';
 import { AdventureJournal } from './systems/AdventureJournal.js';
 import { StaminaSystem, CheckpointSystem, ExplorationHUD } from './systems/ExplorationSystems.js';
+import { SurvivalSystems } from './systems/SurvivalSystems.js';
 
 const viewport = document.querySelector('#viewport');
 const loading = document.querySelector('#loading');
@@ -31,6 +32,7 @@ const progressStore = new ProgressStore();
 const journal = new AdventureJournal();
 const stamina = new StaminaSystem();
 const checkpoints = new CheckpointSystem();
+const survival = new SurvivalSystems();
 let explorationHUD, autosaveElapsed=0;
 const settingsStore = new GameSettings();
 const gameSettings = settingsStore.load();
@@ -109,13 +111,13 @@ function makeCapybara() {
   const head=sphere(root,'cabeca',.62,[.72,1.22,0],furLight,24);head.scale.set(1.05,.92,.88);
   const snout=sphere(root,'focinho',.42,[1.14,1.02,0],muzzle,20);snout.scale.set(1.05,.68,.78);
   const nose=sphere(root,'nariz',.15,[1.48,1.16,0],dark,16);nose.scale.set(1,.72,1);
+  const legs=[],ears=[],eyes=[];
   for(const side of [-1,1]){
     const ear=sphere(root,'orelha',.2,[.58,1.76,side*.43],fur,16);ear.scale.set(.75,1,.55);ears.push(ear);
     const inner=sphere(root,'orelha-interna',.105,[.62,1.79,side*.49],muzzle,12);inner.scale.set(.7,1,.45);
     eyes.push(sphere(root,'olho',.095,[.98,1.42,side*.43],eye,16));
     sphere(root,'brilho',.027,[1.01,1.46,side*.49],material('#fff2d2',.2),10);
   }
-  const legs=[],ears=[],eyes=[];
   for(const x of [-.65,.65])for(const z of [-.43,.43]){
     const leg=new THREE.Group();leg.position.set(x,.55,z);root.add(leg);
     const limb=new THREE.Mesh(new THREE.CylinderGeometry(.14,.12,.62,12),fur);limb.position.y=-.23;limb.castShadow=true;leg.add(limb);
@@ -274,6 +276,7 @@ function updatePlayer(dt){
   move.copy(cameraForward).multiplyScalar(keys.forward).addScaledVector(right,keys.right);
   if(move.lengthSq()>1)move.normalize();
   const staminaState=stamina.update(dt,{running:keys.run,moving:move.lengthSq()>.02});
+  survival.update(dt,{moving:move.lengthSq()>.02,running:keys.run&&staminaState.canRun,weather:atmosphere?.weather||'clear',biome:glacialMode?'glacial':cerradoMode?'cerrado':'amazon',inWater:Math.abs(player.position.x-13)<3.7&&player.position.z<12&&player.position.z>-78});
   explorationHUD?.setStamina(staminaState);
   const sprinting=keys.run&&staminaState.canRun;
   const speed=sprinting?7.1:4.2;
@@ -285,8 +288,9 @@ function updatePlayer(dt){
   player.position.z+=playerVelocity.z*dt;
   player.position.x=THREE.MathUtils.clamp(player.position.x,-10,10);
   player.position.z=THREE.MathUtils.clamp(player.position.z,-78,11);
+  if(survival.state.inWater){playerVelocity.x*=.88;playerVelocity.z*=.88;}
   if(move.lengthSq()>.02){const angle=Math.atan2(-move.z,move.x);player.rotation.y=THREE.MathUtils.damp(player.rotation.y,angle,10,dt);}
-  if(keys.jump&&!jumpWasDown&&grounded){verticalVelocity=7.5;grounded=false;}
+  if(keys.jump&&!jumpWasDown&&grounded){verticalVelocity=survival.consumeJump()?7.5:5.2;grounded=false;}
   jumpWasDown=keys.jump;
   verticalVelocity-=18*dt;player.position.y+=verticalVelocity*dt;
   if(player.position.y<=0){player.position.y=0;verticalVelocity=0;grounded=true;}
@@ -309,6 +313,7 @@ function updatePlayer(dt){
 function saveProgress(){
   const saved=progressStore.save({collected:fruits.map((fruit,index)=>fruit.userData.collected?index:null).filter(index=>index!==null),talked:companions?.talkedNames||[],portalUnlocked:portal?.unlocked,glacialMode,glacialCrystals:iceCrystals.length?iceCrystals.filter(c=>c.userData.collected).map(c=>c.userData.index):savedGlacialCrystals,mammothRescued:glacialMammoths?glacialMammoths.rescued:savedMammothRescued,cerradoMode,cerradoSeeds:cerradoSeeds.length?cerradoSeeds.filter(s=>s.userData.collected).map(s=>s.userData.index):savedCerradoSeeds,anteaterHelped,cerradoAnimals:cerradoWildlife?.observedNames||savedCerradoAnimals});
   explorationHUD?.setSaveStatus(saved?'PROGRESSO SALVO':'FALHA AO SALVAR',saved?'saved':'error');
+  survival.save();
   return saved;
 }
 function restoreProgress(){
@@ -402,6 +407,7 @@ function updateCollectibles(dt){
   for(const fruit of fruits){if(fruit.userData.collected)continue;fruit.rotation.y+=dt*1.2;fruit.position.y=fruit.userData.baseY+Math.sin(performance.now()*.002+fruit.position.z)*.12;if(fruit.position.distanceTo(player.position.clone().add(new THREE.Vector3(0,1,0)))<1.45){fruit.userData.collected=true;fruit.visible=false;collected++;recordJournal('fruit');fruitCount.textContent=collected;saveProgress();if(collected===fruits.length){if(companions?.talkedNames.includes('Tico')){portal?.unlock();recordJournal('portal');missionText.textContent='Portal aberto! Encontre a passagem congelada';}else{missionText.textContent='Frutos encontrados! Converse com Tico';}showDialogue('Missão concluída','Você encontrou todos os frutos! Procure Tico para descobrir como atravessar.');}}}
 }
 function scareWildlife(){
+  if(!survival.useScare()) { showDialogue('Respire um pouco','Você precisa recuperar o fôlego antes de assustar outro predador.'); return; }
   if(!glacialMode||!wildlife)return;
   if(!wildlife.scare())showDialogue('Sem ameaças por perto','Aproxime-se de um lobo-das-neves e use ASSUSTAR para se defender.');
 }
@@ -494,6 +500,7 @@ function animate(){
   if(started&&!paused&&dt>0){autosaveElapsed+=dt;if(autosaveElapsed>=12){autosaveElapsed=0;saveProgress();}const unlocked=journal.tick(dt,{weather:atmosphere?.weather});if(unlocked.length){const item=journal.getAll().find(entry=>entry.id===unlocked[0]);const toast=document.querySelector('#achievementToast');if(toast&&item){toast.textContent='🏆 Conquista: '+item.title;toast.classList.remove('hidden');setTimeout(()=>toast.classList.add('hidden'),3200);}refreshJournal();}}
   if(ambientLife&&!glacialMode&&!cerradoMode)ambientLife.update(dt,player);
   worldVisuals?.update(dt,player,glacialMode,cerradoMode);
+  survival.renderHUD();
   atmosphere?.update(dt,player,glacialMode?'glacial':cerradoMode?'cerrado':'amazon');
   if(explorationHUD&&player){const points=[];const add=(items,color)=>items.forEach(item=>{if(!item.userData.collected&&item.visible)points.push({x:item.position.x,z:item.position.z,color});});add(fruits,'#f1c45d');add(iceCrystals,'#7ce8ff');add(cerradoSeeds,'#f3d56d');if(portal?.root?.visible)points.push({x:portal.root.position.x,z:portal.root.position.z,color:'#d99cff',size:5});explorationHUD.update({player,camera,points,heading:player.rotation.y,biome:glacialMode?'glacial':cerradoMode?'cerrado':'amazon'});}
   if(glacialMode&&snowParticles){for(let i=0;i<snowPositions.length;i++){const p=snowPositions[i];p.y-=dt*(1.4+(i%5)*.25);p.x+=Math.sin(performance.now()*.0004+i)*dt*.25;if(p.y<0)p.set(player.position.x+(Math.random()-.5)*34,12+Math.random()*8,player.position.z-Math.random()*45);snowDummy.position.copy(p);snowDummy.updateMatrix();snowParticles.setMatrixAt(i,snowDummy.matrix);}snowParticles.instanceMatrix.needsUpdate=true;}
