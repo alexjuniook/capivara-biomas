@@ -14,6 +14,7 @@ export class WorldVisuals {
     this.pebbles = this.#createPebbles();
     this.dust = this.#createParticles();
     this.water = this.#createWaterDetails();
+    this.fireflies = this.#createFireflies();
   }
 
   createGroundMaterial(color = '#587a43') {
@@ -152,6 +153,21 @@ export class WorldVisuals {
     return { mesh, positions, dummy };
   }
 
+  #createFireflies() {
+    const count=Math.max(10,Math.round(28*this.quality));
+    const geometry=new THREE.SphereGeometry(.045,6,5);
+    const material=new THREE.MeshBasicMaterial({color:'#e8ff9a',transparent:true,opacity:0,depthWrite:false});
+    const mesh=new THREE.InstancedMesh(geometry,material,count);
+    const dummy=new THREE.Object3D();
+    const positions=[];
+    for(let i=0;i<count;i++){
+      positions.push(new THREE.Vector3((Math.random()-.5)*34,.6+Math.random()*5,-Math.random()*78));
+      dummy.position.copy(positions[i]);dummy.scale.setScalar(.8+Math.random()*.8);dummy.updateMatrix();mesh.setMatrixAt(i,dummy.matrix);
+    }
+    mesh.instanceMatrix.needsUpdate=true;mesh.frustumCulled=false;this.scene.add(mesh);
+    return {mesh,positions,dummy};
+  }
+
   #createWaterDetails() {
     const group = new THREE.Group();
     const material = new THREE.MeshBasicMaterial({ color: '#b5e7df', transparent: true, opacity: 0.22, side: THREE.DoubleSide });
@@ -168,6 +184,19 @@ export class WorldVisuals {
 
   update(dt, focus, glacial = false, cerrado = false) {
     this.time += dt;
+    const dayPhase=(this.time%240)/240;
+    const daylight=.5+.5*Math.cos((dayPhase-.25)*Math.PI*2);
+    this.fireflies.mesh.material.opacity=THREE.MathUtils.clamp((.42-daylight)*1.8,0,.72);
+    this.fireflies.mesh.visible=!glacial;
+    for(let i=0;i<this.fireflies.positions.length;i++){
+      const p=this.fireflies.positions[i];
+      p.y+=Math.sin(this.time*1.8+i)*dt*.12;
+      p.x+=Math.sin(this.time*.65+i*2)*dt*.09;
+      this.fireflies.dummy.position.copy(p);
+      this.fireflies.dummy.scale.setScalar(.65+(.5+.5*Math.sin(this.time*5+i*3))*.65);
+      this.fireflies.dummy.updateMatrix();this.fireflies.mesh.setMatrixAt(i,this.fireflies.dummy.matrix);
+    }
+    this.fireflies.mesh.instanceMatrix.needsUpdate=true;
     this.clouds.children.forEach(cloud => {
       cloud.position.x += cloud.userData.speed * dt;
       if (cloud.position.x > 70) cloud.position.x = -70;
@@ -203,7 +232,7 @@ export class WorldVisuals {
         object.material.dispose();
       }
     });
-    for (const object of [this.sun, this.clouds, this.grass, this.wildflowers, this.pebbles, this.dust.mesh, this.water]) {
+    for (const object of [this.sun, this.clouds, this.grass, this.wildflowers, this.pebbles, this.dust.mesh, this.water, this.fireflies.mesh]) {
       this.scene.remove(object);
       object.traverse?.(child => { child.geometry?.dispose(); if (child.material) { for (const material of (Array.isArray(child.material) ? child.material : [child.material])) material.dispose(); } });
     }
