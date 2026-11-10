@@ -197,7 +197,10 @@ function saveProgress(){
 function restoreProgress(){
   const saved=progressStore.load();
   savedGlacialCrystals=Array.isArray(saved.glacialCrystals)?saved.glacialCrystals:[];
-  savedMammothRescued=Boolean(saved.mammothRescued);\n  savedCerradoSeeds=Array.isArray(saved.cerradoSeeds)?saved.cerradoSeeds:[];\n  savedAnteaterHelped=Boolean(saved.anteaterHelped);\n  anteaterHelped=savedAnteaterHelped;
+  savedMammothRescued=Boolean(saved.mammothRescued);
+  savedCerradoSeeds=Array.isArray(saved.cerradoSeeds)?saved.cerradoSeeds:[];
+  savedAnteaterHelped=Boolean(saved.anteaterHelped);
+  anteaterHelped=savedAnteaterHelped;
   glacialCrystals=savedGlacialCrystals.length;
   const collectedSet=new Set(Array.isArray(saved.collected)?saved.collected:[]);
   fruits.forEach((fruit,index)=>{if(collectedSet.has(index)){fruit.userData.collected=true;fruit.visible=false;collected++;}});
@@ -224,7 +227,8 @@ function showCompanionDialogue(item){
   saveProgress();
 }
 function interact(){
-  if(glacialMode&&cerradoGate&&player.position.distanceTo(cerradoGate.position)<4){showDialogue('Portal dourado','O vale foi salvo. Atravesse para conhecer o Cerrado brasileiro.','ATRAVESSAR');document.querySelector('#closeDialogueBtn').onclick=enterCerradoChapter;return;}\n  if(glacialMode&&glacialMammoths?.interact())return;
+  if(glacialMode&&cerradoGate&&player.position.distanceTo(cerradoGate.position)<4){showDialogue('Portal dourado','O vale foi salvo. Atravesse para conhecer o Cerrado brasileiro.','ATRAVESSAR');document.querySelector('#closeDialogueBtn').onclick=enterCerradoChapter;return;}
+  if(glacialMode&&glacialMammoths?.interact())return;
   if(companions?.interact())return;
   if(portal?.unlocked&&player.position.distanceTo(portal.root.position)<4){showGlacialInvitation();return;}
   showDialogue('A floresta está cheia de segredos','Chegue perto de Tico, Brasa ou Bento e pressione E para conversar. No celular, use o botão CONVERSAR.');
@@ -288,7 +292,46 @@ function updateGlacialMission(){
     missionText.textContent='Encontre os cristais azuis · '+glacialCrystals+'/5';
   }
 }
-function createCerradoGate(){\n  if(cerradoGate)return;\n  cerradoGate=new THREE.Group();cerradoGate.position.set(0,0,-74);\n  const stone=new THREE.MeshStandardMaterial({color:'#80633c',roughness:.85});\n  const glow=new THREE.MeshStandardMaterial({color:'#f3c86b',emissive:'#b9791e',emissiveIntensity:.9,roughness:.25});\n  const arch=new THREE.Mesh(new THREE.TorusGeometry(2.15,.3,10,32),stone);arch.position.y=2.6;arch.scale.y=1.25;cerradoGate.add(arch);\n  const ring=new THREE.Mesh(new THREE.TorusGeometry(1.82,.1,8,32),glow);ring.position.y=2.6;ring.scale.y=1.25;cerradoGate.add(ring);\n  scene.add(cerradoGate);\n}\nfunction enterCerradoChapter(){\n  if(cerradoMode)return;\n  glacialMode=false;cerradoMode=true;\n  wildlife?.dispose();wildlife=null;glacialMammoths?.dispose();glacialMammoths=null;\n  if(glacialBiome){glacialBiome.dispose();glacialBiome=null;}\n  if(snowParticles){scene.remove(snowParticles);snowParticles.geometry.dispose();snowParticles.material.dispose();snowParticles=null;}\n  if(cerradoGate){scene.remove(cerradoGate);cerradoGate=null;}\n  scene.background.set('#e9c98d');scene.fog.color.set('#d7b77f');scene.fog.density=.009;\n  cerradoBiome=buildCerradoBiome(scene,innerWidth<700?.55:1);\n  cerradoSeeds=cerradoBiome.seeds;\n  cerradoSeeds.forEach(seed=>{if(savedCerradoSeeds.includes(seed.userData.index)){seed.userData.collected=true;seed.visible=false;}});\n  cerradoSeedCount=cerradoSeeds.filter(seed=>seed.userData.collected).length;\n  anteaterHelped=savedAnteaterHelped;\n  player.position.set(0,0,5);\n  document.querySelector('.brand small').textContent='Capítulo 3 · Cerrado brasileiro';\n  document.querySelector('#iceStat')?.classList.add('hidden');\n  document.querySelector('#fruitStat')?.classList.add('hidden');\n  showDialogue('A terceira era: o Cerrado','Depois do gelo, a capivara encontra um Brasil de chapadas, veredas e ipês. Encontre cinco sementes douradas e ajude o tamanduá-bandeira.');\n  updateCerradoMission();saveProgress();\n}\nfunction updateCerradoMission(){\n  if(!cerradoMode)return;\n  if(cerradoSeedCount>=5&&anteaterHelped)missionText.textContent='Vereda restaurada! Capítulo do Cerrado concluído';\n  else if(cerradoSeedCount<5)missionText.textContent='Encontre as sementes douradas · '+cerradoSeedCount+'/5'+(anteaterHelped?' · Tamanduá ajudado':'');\n  else missionText.textContent='Ajude o tamanduá-bandeira perto das árvores · Sementes 5/5';\n}\nfunction updateCerradoCollectibles(dt){\n  if(!cerradoMode||!cerradoSeeds.length)return;\n  for(const seed of cerradoSeeds){if(seed.userData.collected)continue;seed.rotation.y+=dt*.9;seed.position.y=seed.userData.baseY+Math.sin(performance.now()*.002+seed.userData.index)*.13;if(seed.position.distanceTo(player.position.clone().add(new THREE.Vector3(0,1,0)))<1.7){seed.userData.collected=true;seed.visible=false;cerradoSeedCount++;updateCerradoMission();saveProgress();if(cerradoSeedCount===5)showDialogue('As sementes douradas reunidas!','A vereda começa a florescer novamente. Falta ajudar o tamanduá-bandeira para concluir este capítulo.');}}\n}\nfunction updateGlacialCollectibles(dt){
+function createCerradoGate(){
+  if(cerradoGate)return;
+  cerradoGate=new THREE.Group();cerradoGate.position.set(0,0,-74);
+  const stone=new THREE.MeshStandardMaterial({color:'#80633c',roughness:.85});
+  const glow=new THREE.MeshStandardMaterial({color:'#f3c86b',emissive:'#b9791e',emissiveIntensity:.9,roughness:.25});
+  const arch=new THREE.Mesh(new THREE.TorusGeometry(2.15,.3,10,32),stone);arch.position.y=2.6;arch.scale.y=1.25;cerradoGate.add(arch);
+  const ring=new THREE.Mesh(new THREE.TorusGeometry(1.82,.1,8,32),glow);ring.position.y=2.6;ring.scale.y=1.25;cerradoGate.add(ring);
+  scene.add(cerradoGate);
+}
+function enterCerradoChapter(){
+  if(cerradoMode)return;
+  glacialMode=false;cerradoMode=true;
+  wildlife?.dispose();wildlife=null;glacialMammoths?.dispose();glacialMammoths=null;
+  if(glacialBiome){glacialBiome.dispose();glacialBiome=null;}
+  if(snowParticles){scene.remove(snowParticles);snowParticles.geometry.dispose();snowParticles.material.dispose();snowParticles=null;}
+  if(cerradoGate){scene.remove(cerradoGate);cerradoGate=null;}
+  scene.background.set('#e9c98d');scene.fog.color.set('#d7b77f');scene.fog.density=.009;
+  cerradoBiome=buildCerradoBiome(scene,innerWidth<700?.55:1);
+  cerradoSeeds=cerradoBiome.seeds;
+  cerradoSeeds.forEach(seed=>{if(savedCerradoSeeds.includes(seed.userData.index)){seed.userData.collected=true;seed.visible=false;}});
+  cerradoSeedCount=cerradoSeeds.filter(seed=>seed.userData.collected).length;
+  anteaterHelped=savedAnteaterHelped;
+  player.position.set(0,0,5);
+  document.querySelector('.brand small').textContent='Capítulo 3 · Cerrado brasileiro';
+  document.querySelector('#iceStat')?.classList.add('hidden');
+  document.querySelector('#fruitStat')?.classList.add('hidden');
+  showDialogue('A terceira era: o Cerrado','Depois do gelo, a capivara encontra um Brasil de chapadas, veredas e ipês. Encontre cinco sementes douradas e ajude o tamanduá-bandeira.');
+  updateCerradoMission();saveProgress();
+}
+function updateCerradoMission(){
+  if(!cerradoMode)return;
+  if(cerradoSeedCount>=5&&anteaterHelped)missionText.textContent='Vereda restaurada! Capítulo do Cerrado concluído';
+  else if(cerradoSeedCount<5)missionText.textContent='Encontre as sementes douradas · '+cerradoSeedCount+'/5'+(anteaterHelped?' · Tamanduá ajudado':'');
+  else missionText.textContent='Ajude o tamanduá-bandeira perto das árvores · Sementes 5/5';
+}
+function updateCerradoCollectibles(dt){
+  if(!cerradoMode||!cerradoSeeds.length)return;
+  for(const seed of cerradoSeeds){if(seed.userData.collected)continue;seed.rotation.y+=dt*.9;seed.position.y=seed.userData.baseY+Math.sin(performance.now()*.002+seed.userData.index)*.13;if(seed.position.distanceTo(player.position.clone().add(new THREE.Vector3(0,1,0)))<1.7){seed.userData.collected=true;seed.visible=false;cerradoSeedCount++;updateCerradoMission();saveProgress();if(cerradoSeedCount===5)showDialogue('As sementes douradas reunidas!','A vereda começa a florescer novamente. Falta ajudar o tamanduá-bandeira para concluir este capítulo.');}}
+}
+function updateGlacialCollectibles(dt){
   if(!glacialMode||!iceCrystals.length)return;
   for(const crystal of iceCrystals){
     if(crystal.userData.collected)continue;
