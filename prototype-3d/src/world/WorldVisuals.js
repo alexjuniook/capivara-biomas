@@ -6,6 +6,7 @@ export class WorldVisuals {
     this.quality = quality;
     this.time = 0;
     this.effects = [];
+    this.grassData = [];
     this.sky = this.#createSky();
     this.sun = this.#createSun();
     this.clouds = this.#createClouds();
@@ -92,13 +93,16 @@ export class WorldVisuals {
     for (let i = 0; i < count; i++) {
       const x = (Math.random() - 0.5) * 44;
       const z = 12 - Math.random() * 88;
-      dummy.position.set(x, 0, z);
-      dummy.rotation.set((Math.random() - 0.5) * 0.12, Math.random() * Math.PI, (Math.random() - 0.5) * 0.18);
+      const rotationY = Math.random() * Math.PI;
       const scale = 0.45 + Math.random() * 1.15;
+      const phase = Math.random() * Math.PI * 2;
+      dummy.position.set(x, 0, z);
+      dummy.rotation.set(0, rotationY, 0);
       dummy.scale.setScalar(scale);
       dummy.updateMatrix();
       mesh.setMatrixAt(i, dummy.matrix);
       mesh.setColorAt(i, new THREE.Color().setHSL(0.23 + Math.random() * 0.08, 0.28 + Math.random() * 0.25, 0.28 + Math.random() * 0.18));
+      this.grassData.push({ x, z, rotationY, scale, phase });
     }
     mesh.instanceMatrix.needsUpdate = true;
     mesh.receiveShadow = true;
@@ -182,8 +186,20 @@ export class WorldVisuals {
     return group;
   }
 
-  update(dt, focus, glacial = false, cerrado = false) {
+  update(dt, focus, glacial = false, cerrado = false, weather = 'clear') {
     this.time += dt;
+    const windStrength = ['storm','blizzard'].includes(weather) ? 1.9 : ['wind','dust','rain','snow'].includes(weather) ? 1.25 : 0.62;
+    const grassDummy = new THREE.Object3D();
+    for (let i = 0; i < this.grassData.length; i++) {
+      const blade = this.grassData[i];
+      const sway = Math.sin(this.time * 1.65 + blade.phase + blade.x * 0.08) * 0.13 * windStrength;
+      grassDummy.position.set(blade.x, 0, blade.z);
+      grassDummy.rotation.set(0, blade.rotationY, sway);
+      grassDummy.scale.setScalar(blade.scale);
+      grassDummy.updateMatrix();
+      this.grass.setMatrixAt(i, grassDummy.matrix);
+    }
+    this.grass.instanceMatrix.needsUpdate = true;
     const dayPhase=(this.time%240)/240;
     const daylight=.5+.5*Math.cos((dayPhase-.25)*Math.PI*2);
     this.fireflies.mesh.material.opacity=THREE.MathUtils.clamp((.42-daylight)*1.8,0,.72);
@@ -214,7 +230,9 @@ export class WorldVisuals {
     }
     particle.mesh.instanceMatrix.needsUpdate = true;
     this.water.children.forEach((ripple, i) => {
-      ripple.scale.setScalar(0.65 + (Math.sin(this.time * 1.2 + ripple.userData.phase) + 1) * 0.42);
+      const wave = 0.65 + (Math.sin(this.time * 1.2 + ripple.userData.phase) + 1) * 0.42;
+      ripple.scale.set(wave, wave, wave);
+      ripple.position.x += Math.sin(this.time * 0.35 + ripple.userData.phase) * dt * 0.018;
       ripple.material.opacity = glacial ? 0.04 : cerrado ? 0.1 : 0.22;
     });
     this.sun.visible = !glacial;
