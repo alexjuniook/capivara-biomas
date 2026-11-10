@@ -16,3 +16,5 @@
 @media(max-width:700px),(pointer:coarse){.settings-panel{top:64px;right:10px}.stats{gap:6px}#settingsBtn{font-size:8px;padding:6px}}
 
 .hud-hidden{display:none!important}
+
+#weatherLabel{font-size:10px;color:#d8efa9;white-space:nowrap}#weatherLabel::after{content:' · ' attr(data-time);color:#e9f0df}@media(max-width:700px){#weatherLabel{font-size:8px}}
