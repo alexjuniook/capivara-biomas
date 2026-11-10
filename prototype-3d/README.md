@@ -30,7 +30,7 @@ Depois de publicar uma prévia do branch, a página fica em `/prototype-3d/`. Pa
 - Dois lobos-das-neves com patrulha, perseguição e ataque; a capivara pode correr, pular e assustá-los duas vezes para afastá-los. O HUD mostra vidas.
 - Família de mamutes na Era Glacial: encontre o filhote perdido e pressione E ou CONVERSAR para reuni-lo à mãe; o filhote passa a acompanhar o adulto e o resgate fica salvo.
 - Objetivo glacial integrado: reunir os cinco cristais e resgatar o filhote; o HUD prioriza a tarefa pendente e reconhece a conclusão do vale quando as duas metas forem cumpridas.
-- Terceiro capítulo no Cerrado brasileiro, com chapadas, veredas, ipês, buritis, riacho e vegetação de campo.
+- Terceiro capítulo no Cerrado brasileiro, com chapadas, veredas, ipês, buritis, capim-dourado, riacho, pólen ao vento e vegetação de campo.
 - Missão do Cerrado: reunir cinco sementes douradas, ajudar o tamanduá-bandeira e registrar encontros com lobo-guará, seriema e tatu-canastra; os encontros são salvos localmente.
 - Fauna do Cerrado com deslocamento, exploração de território e interação por proximidade.
 - Sistema de paisagem sonora procedural com controle de ligar/desligar, sem arquivos externos de áudio.
@@ -41,7 +41,7 @@ Depois de publicar uma prévia do branch, a página fica em `/prototype-3d/`. Pa
 
 Este é um primeiro protótipo jogável, não o jogo final. A capivara ainda usa geometria procedural, sem modelo GLB nem animações profissionais; a física e as colisões são simplificadas; o sistema de vidas e progressão ainda não está completo; não há áudio, combate ou uma campanha completa. O progresso local cobre a coleta, conversas e o desbloqueio do capítulo; ainda não há sincronização entre dispositivos nem um mapa glacial com missões próprias. Os animais do Cerrado usam rotinas simples de deslocamento e observação, não simulação ecológica completa. A paisagem sonora é sintetizada pelo navegador e não substitui gravações naturais ou trilha profissional. Os pássaros e borboletas são elementos ambientais simples, não fauna com IA ou rotinas ecológicas completas. O protótipo depende de conexão com a internet para carregar Three.js do CDN.
 
-A compatibilidade e o desempenho ainda precisam ser verificados em aparelhos reais, especialmente no Samsung A07. O branch é de desenvolvimento e não foi mesclado à produção nem implantado no Cloudflare.
+O renderizador reduz antialiasing, sombras e resolução interna em telas de toque para favorecer aparelhos modestos. A compatibilidade e o desempenho ainda precisam ser verificados em aparelhos reais, especialmente no Samsung A07. O branch é de desenvolvimento e não foi mesclado à produção nem implantado no Cloudflare.
 
 ## Próximos marcos
 
