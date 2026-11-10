@@ -4,6 +4,7 @@ import { AmbientLife } from './world/AmbientLife.js';
 import { CompanionSystem } from './characters/CompanionSystem.js';
 import { GlacialPortal } from './world/GlacialPortal.js';
 import { buildGlacialBiome } from './world/GlacialBiome.js';
+import { ProgressStore } from './systems/ProgressStore.js';
 
 const viewport = document.querySelector('#viewport');
 const loading = document.querySelector('#loading');
@@ -15,6 +16,7 @@ const heartsText = document.querySelector('#hearts');
 
 let renderer, scene, camera, director, player, clock, ambientLife, companions, portal;
 let glacialMode = false, snowParticles = null, snowDummy = null, snowPositions = [], glacialBiome = null;
+const progressStore = new ProgressStore();
 let started = false, collected = 0, lives = 3;
 const keys = { forward:0, right:0, jump:false, run:false };
 const solids = [];
@@ -135,6 +137,7 @@ function setup() {
   createWorld();
   director=new CameraDirector({camera,domElement:renderer.domElement,scene,target:player,collisionObjects:obstacles});
   director.setMode('thirdPerson');
+  restoreProgress();
   clock=new THREE.Clock();
   window.addEventListener('resize',resize);
   loading.classList.add('hidden');welcome.classList.remove('hidden');
@@ -184,7 +187,7 @@ function updatePlayer(dt){
   // Simple physical blockers keep the character out of tree trunks and rocks.
   for(const obstacle of obstacles){const p=new THREE.Vector3();obstacle.getWorldPosition(p);const radius=obstacle.geometry?.parameters?.radius||.6;const dx=player.position.x-p.x,dz=player.position.z-p.z;const min=radius+.7;if(dx*dx+dz*dz<min*min&&Math.abs(player.position.y)<1.2){const d=Math.max(.001,Math.hypot(dx,dz));player.position.x=p.x+dx/d*min;player.position.z=p.z+dz/d*min;}}
 }
-function showDialogue(title, message, button='CONTINUAR') {
+function saveProgress(){\n  progressStore.save({collected:fruits.map((fruit,index)=>fruit.userData.collected?index:null).filter(index=>index!==null),talked:companions?.talkedNames||[],portalUnlocked:portal?.unlocked,glacialMode});\n}\nfunction restoreProgress(){\n  const saved=progressStore.load();\n  const collectedSet=new Set(Array.isArray(saved.collected)?saved.collected:[]);\n  fruits.forEach((fruit,index)=>{if(collectedSet.has(index)){fruit.userData.collected=true;fruit.visible=false;collected++;}});\n  fruitCount.textContent=collected;\n  companions?.restoreTalked(Array.isArray(saved.talked)?saved.talked:[]);\n  if(saved.portalUnlocked)portal?.unlock();\n  if(collected===fruits.length&&collected>0&&!saved.portalUnlocked)missionText.textContent='Frutos encontrados! Converse com Tico';\n  else if(collected>0)missionText.textContent='Continue sua jornada pela floresta';\n  if(saved.glacialMode){portal?.unlock();enterGlacialChapter();}\n}\nfunction showDialogue(title, message, button='CONTINUAR') {
   const panel=document.querySelector('#dialogue');
   document.querySelector('#dialogueTitle').textContent=title;
   document.querySelector('#dialogueText').textContent=message;
@@ -195,7 +198,7 @@ function showDialogue(title, message, button='CONTINUAR') {
 }
 function showCompanionDialogue(item){
   showDialogue(item.name+' · '+item.species,item.dialogue);
-  if(item.name==='Tico'&&collected===fruits.length){portal?.unlock();missionText.textContent='Portal aberto! Encontre a passagem congelada';}
+  if(item.name==='Tico'&&collected===fruits.length){portal?.unlock();missionText.textContent='Portal aberto! Encontre a passagem congelada';}\n  saveProgress();
 }
 function interact(){
   if(companions?.interact())return;
@@ -209,7 +212,7 @@ function showGlacialInvitation(){
 }
 function enterGlacialChapter(){
   if(glacialMode)return;
-  glacialMode=true;
+  glacialMode=true;\n  saveProgress();
   document.querySelector('#dialogue').classList.add('hidden');
   document.querySelector('.brand small').textContent='Capítulo 2 · Era Glacial';
   missionText.textContent='Explore a passagem congelada';
@@ -226,7 +229,7 @@ function enterGlacialChapter(){
   showDialogue('Bem-vindo à Era Glacial','A floresta ficou para trás. Esta é a primeira passagem para o novo capítulo. Explore o gelo e procure as pegadas da família de Bento.');
 }
 function updateCollectibles(dt){
-  for(const fruit of fruits){if(fruit.userData.collected)continue;fruit.rotation.y+=dt*1.2;fruit.position.y=fruit.userData.baseY+Math.sin(performance.now()*.002+fruit.position.z)*.12;if(fruit.position.distanceTo(player.position.clone().add(new THREE.Vector3(0,1,0)))<1.45){fruit.userData.collected=true;fruit.visible=false;collected++;fruitCount.textContent=collected;if(collected===fruits.length){if(companions?.talkedNames.includes('Tico')){portal?.unlock();missionText.textContent='Portal aberto! Encontre a passagem congelada';}else{missionText.textContent='Frutos encontrados! Converse com Tico';}showDialogue('Missão concluída','Você encontrou todos os frutos! Procure Tico para descobrir como atravessar.');}}}
+  for(const fruit of fruits){if(fruit.userData.collected)continue;fruit.rotation.y+=dt*1.2;fruit.position.y=fruit.userData.baseY+Math.sin(performance.now()*.002+fruit.position.z)*.12;if(fruit.position.distanceTo(player.position.clone().add(new THREE.Vector3(0,1,0)))<1.45){fruit.userData.collected=true;fruit.visible=false;collected++;fruitCount.textContent=collected;saveProgress();if(collected===fruits.length){if(companions?.talkedNames.includes('Tico')){portal?.unlock();missionText.textContent='Portal aberto! Encontre a passagem congelada';}else{missionText.textContent='Frutos encontrados! Converse com Tico';}showDialogue('Missão concluída','Você encontrou todos os frutos! Procure Tico para descobrir como atravessar.');}}}
 }
 function animate(){
   requestAnimationFrame(animate);const dt=Math.min(clock.getDelta(),.04);
