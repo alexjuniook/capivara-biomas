@@ -14,3 +14,5 @@
 #fpsMeter b{font-variant-numeric:tabular-nums}
 #viewport canvas{outline:none}
 @media(max-width:700px),(pointer:coarse){.settings-panel{top:64px;right:10px}.stats{gap:6px}#settingsBtn{font-size:8px;padding:6px}}
+
+.hud-hidden{display:none!important}
