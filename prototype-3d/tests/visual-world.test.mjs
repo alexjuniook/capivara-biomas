@@ -42,3 +42,35 @@ test('glacial chapter releases GPU resources when its world is removed', () => {
   assert.ok(wildlife.includes('geometries.forEach(geometry=>geometry.dispose())'));
   assert.ok(wildlife.includes('materials.forEach(material=>material.dispose())'));
 });
+
+test('all three eras use displaced terrain and player follows ground height', () => {
+  const terrain = readFileSync(new URL('../src/world/TerrainBuilder.js', import.meta.url), 'utf8');
+  const glacial = readFileSync(new URL('../src/world/GlacialBiome.js', import.meta.url), 'utf8');
+  const cerrado = readFileSync(new URL('../src/world/CerradoBiome.js', import.meta.url), 'utf8');
+  assert.ok(terrain.includes('terrainHeightAt'));
+  assert.ok(terrain.includes('computeVertexNormals'));
+  assert.ok(terrain.includes('PlaneGeometry(size, size, segments, segments)'));
+  assert.ok(terrain.includes("biome === 'glacial'"));
+  assert.ok(terrain.includes("biome === 'cerrado'"));
+  assert.ok(glacial.includes("createTerrain(scene,{biome:'glacial'"));
+  assert.ok(cerrado.includes("createTerrain(scene,{biome:'cerrado'"));
+  assert.ok(main.includes("createTerrain(scene,{biome:'amazon'"));
+  assert.ok(main.includes('terrainHeightAt(player.position.x,player.position.z'));
+});
+
+test('capybara close-up model includes facial and paw details', () => {
+  assert.ok(main.includes("'narina'"));
+  assert.ok(main.includes("'dedo'"));
+  assert.ok(main.includes('for(let i=0;i<11;i++)'));
+});
+
+test('glacial wildlife has articulated wolf legs and mammoth anatomy', () => {
+  const wolves = readFileSync(new URL('../src/characters/GlacialWildlife.js', import.meta.url), 'utf8');
+  const mammoths = readFileSync(new URL('../src/characters/GlacialMammoths.js', import.meta.url), 'utf8');
+  assert.ok(wolves.includes('root.userData.legs=legs'));
+  assert.ok(wolves.includes('root.userData.tail=tail'));
+  assert.ok(wolves.includes('enemy.root.userData.tail.rotation.z'));
+  assert.ok(mammoths.includes('new THREE.TubeGeometry(curve,14'));
+  assert.ok(mammoths.includes('root.userData.ears=ears'));
+  assert.ok(mammoths.includes('this.parent.userData.ears.forEach'));
+});

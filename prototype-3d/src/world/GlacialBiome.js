@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { createTerrain } from './TerrainBuilder.js';
 
 export function buildGlacialBiome(scene, quality = 1) {
   const snow = new THREE.MeshStandardMaterial({ color:'#e7f2f5', roughness:0.96 });
@@ -6,11 +7,8 @@ export function buildGlacialBiome(scene, quality = 1) {
   const rock = new THREE.MeshStandardMaterial({ color:'#718994', roughness:1 });
   const added = [];
 
-  const floor = new THREE.Mesh(new THREE.PlaneGeometry(180,180), snow);
-  floor.rotation.x = -Math.PI/2;
-  floor.position.y = 0.045;
-  floor.receiveShadow = true;
-  scene.add(floor); added.push(floor);
+  const floor = createTerrain(scene,{biome:'glacial',quality,materialColor:'#e7f2f5'}).mesh;
+  added.push(floor);
 
   // Frozen lagoon alongside the old river corridor.
   const lake = new THREE.Mesh(new THREE.CircleGeometry(10,48), ice);
