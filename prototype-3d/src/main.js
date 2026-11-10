@@ -49,6 +49,7 @@ const move = new THREE.Vector3();
 const playerVelocity = new THREE.Vector3();
 let verticalVelocity = 0, grounded = true, jumpWasDown = false;
 let walkTime = 0, footstepTimer = 0, footstepDust = null, footstepDummy = null, footstepLife = [];
+const windFoliage = [];
 
 function refreshJournal(){
   const list=document.querySelector('#journalList');
@@ -78,7 +79,7 @@ function sphere(parent, name, size, position, mat, segments=20) {
   parent.add(mesh); return mesh;
 }
 function makeTree(x,z,scale=1,variant=0) {
-  const group=new THREE.Group(); group.position.set(x,0,z); group.scale.setScalar(scale); scene.add(group);
+  const group=new THREE.Group(); group.position.set(x,0,z); group.scale.setScalar(scale); group.userData.windPhase=Math.random()*Math.PI*2; scene.add(group); windFoliage.push(group);
   const trunkMat=material(variant?'#59402d':'#67452f');
   const trunk=new THREE.Mesh(new THREE.CylinderGeometry(.28,.48,5.4,9),trunkMat);
   trunk.position.y=2.7; trunk.castShadow=true; trunk.receiveShadow=true; group.add(trunk); obstacles.push(trunk);
@@ -96,7 +97,7 @@ function makeRock(x,z,s=1) {
   rock.position.set(x,s*.62,z); rock.scale.set(1.25,.8,.9); rock.castShadow=true; rock.receiveShadow=true; scene.add(rock); obstacles.push(rock); return rock;
 }
 function makeFern(x,z,s=1) {
-  const g=new THREE.Group();g.position.set(x,.05,z);g.scale.setScalar(s);scene.add(g);
+  const g=new THREE.Group();g.position.set(x,.05,z);g.scale.setScalar(s);g.userData.windPhase=Math.random()*Math.PI*2;scene.add(g);windFoliage.push(g);
   for(let i=0;i<7;i++){
     const angle=i/7*Math.PI*2;
     const leaf=new THREE.Mesh(new THREE.ConeGeometry(.16,1.35,5),material(i%2?'#397c4c':'#559b55'));
@@ -144,11 +145,20 @@ function createWorld() {
   scene=new THREE.Scene();scene.background=new THREE.Color('#8ccbd3');scene.fog=new THREE.FogExp2('#a6cbb4',.012);
   worldVisuals=new WorldVisuals(scene,(innerWidth<700?.5:1)*(QUALITY[gameSettings.quality]||QUALITY.auto).visuals);
   const hemisphereLight=new THREE.HemisphereLight('#d8f2ff','#425b36',2.1);scene.add(hemisphereLight);
-  const sun=new THREE.DirectionalLight('#fff0cf',3.2);sun.position.set(-18,30,12);sun.castShadow=true;sun.shadow.mapSize.set(preset.shadowSize,preset.shadowSize);sun.shadow.camera.left=-35;sun.shadow.camera.right=35;sun.shadow.camera.top=35;sun.shadow.camera.bottom=-35;sun.shadow.bias=-.0002;scene.add(sun);
+  const sun=new THREE.DirectionalLight('#fff0cf',3.2);sun.position.set(-18,30,12);sun.castShadow=true;const shadowResolution=innerWidth<700?Math.min(preset.shadowSize,512):preset.shadowSize;sun.shadow.mapSize.set(shadowResolution,shadowResolution);sun.shadow.camera.left=-35;sun.shadow.camera.right=35;sun.shadow.camera.top=35;sun.shadow.camera.bottom=-35;sun.shadow.bias=-.0002;scene.add(sun);
   atmosphere=new WorldAtmosphere({scene,sun,hemisphere:hemisphereLight,quality:preset.visuals,weatherLabel:document.querySelector('#weatherLabel')});
   const ground=new THREE.Mesh(new THREE.PlaneGeometry(180,180,1,1),worldVisuals.createGroundMaterial('#587a43'));ground.rotation.x=-Math.PI/2;ground.receiveShadow=true;scene.add(ground);
   const path=new THREE.Mesh(new THREE.PlaneGeometry(12,100),material('#94784d'));path.rotation.x=-Math.PI/2;path.position.set(0,.012,-20);path.receiveShadow=true;scene.add(path);
-  const river=new THREE.Mesh(new THREE.PlaneGeometry(8,100),new THREE.MeshPhysicalMaterial({color:'#318eaa',roughness:.22,metalness:.05,transparent:true,opacity:.86,clearcoat:.8}));river.rotation.x=-Math.PI/2;river.position.set(13,.035,-20);scene.add(river);
+  const riverMaterial=new THREE.MeshPhysicalMaterial({color:'#318eaa',roughness:.2,metalness:.04,transparent:true,opacity:.9,clearcoat:1,clearcoatRoughness:.12});
+  riverMaterial.onBeforeCompile=(shader)=>{
+    shader.uniforms.uRiverTime={value:0};
+    shader.vertexShader=shader.vertexShader.replace('#include <common>','#include <common>\\nvarying vec2 vRiverUv;');
+    shader.vertexShader=shader.vertexShader.replace('#include <uv_vertex>','#include <uv_vertex>\\nvRiverUv=uv;');
+    shader.fragmentShader=shader.fragmentShader.replace('#include <common>','#include <common>\\nvarying vec2 vRiverUv;\\nuniform float uRiverTime;');
+    shader.fragmentShader=shader.fragmentShader.replace('#include <color_fragment>','#include <color_fragment>\\nfloat riverWave=sin(vRiverUv.x*38.0+uRiverTime*1.7)*sin(vRiverUv.y*12.0-uRiverTime*1.1);\\nfloat riverGlint=smoothstep(0.72,0.98,riverWave);\\ndiffuseColor.rgb*=0.94+riverWave*0.045+riverGlint*0.12;');
+    riverMaterial.userData.shader=shader;
+  };
+  const river=new THREE.Mesh(new THREE.PlaneGeometry(8,100,1,48),riverMaterial);river.rotation.x=-Math.PI/2;river.position.set(13,.035,-20);river.receiveShadow=true;scene.add(river);scene.userData.riverMaterial=riverMaterial;
   for(let i=0;i<24;i++){
     const z=12-i*3.5;
     makeTree(-8-(i%4)*2.3,z,1.1+(i%3)*.25,i%2);
@@ -177,7 +187,7 @@ function setup() {
   const preset=QUALITY[gameSettings.quality]||QUALITY.auto;
   currentPixelRatio=Math.min(devicePixelRatio,touchDevice?1.1:1.5)*preset.pixelRatio;
   renderer.setPixelRatio(currentPixelRatio);renderer.setSize(innerWidth,innerHeight);
-  renderer.shadowMap.enabled=preset.shadows&&innerWidth>760&&!touchDevice;renderer.shadowMap.type=THREE.PCFSoftShadowMap;
+  renderer.shadowMap.enabled=preset.shadows&&(!touchDevice||gameSettings.quality==='medium'||gameSettings.quality==='high');renderer.shadowMap.type=THREE.PCFSoftShadowMap;
   renderer.outputColorSpace=THREE.SRGBColorSpace;renderer.toneMapping=THREE.ACESFilmicToneMapping;renderer.toneMappingExposure=1.15;
   viewport.appendChild(renderer.domElement);
   camera=new THREE.PerspectiveCamera(62,innerWidth/innerHeight,.1,180);
@@ -311,25 +321,31 @@ function updatePlayer(dt){
 
   if(keys.jump&&!jumpWasDown&&grounded&&!inWater){verticalVelocity=survival.consumeJump()?6.5:4.8;grounded=false;}
   jumpWasDown=keys.jump;
-  verticalVelocity-=17.5*dt;
-  player.position.y+=verticalVelocity*dt;
-  if(player.position.y<=0){player.position.y=0;verticalVelocity=0;grounded=true;}
-  if(inWater&&player.position.y<.35){player.position.y=Math.max(0,player.position.y);verticalVelocity=Math.max(verticalVelocity,-1.8);}
+  if(inWater){
+    verticalVelocity=THREE.MathUtils.damp(verticalVelocity,0,5,dt);
+    player.position.y=THREE.MathUtils.damp(player.position.y,.22,3.2,dt);
+    grounded=true;
+  }else{
+    verticalVelocity-=17.5*dt;
+    player.position.y+=verticalVelocity*dt;
+    if(player.position.y<=0){player.position.y=0;verticalVelocity=0;grounded=true;}
+  }
 
   // Ciclo de passada desacelera junto com o personagem; as patas trabalham em diagonal.
   const gait=THREE.MathUtils.clamp(actualSpeed/5.8,0,1);
   walkTime+=dt*(.35+actualSpeed*2.15);
-  const stride=.48*gait;
+  const stride=(inWater?.25:.48)*gait;
+  const swimPhase=walkTime*1.65;
   player.userData.legs.forEach((leg,i)=>{
-    const phase=walkTime+((i===0||i===3)?0:Math.PI);
+    const phase=(inWater?swimPhase:walkTime)+((i===0||i===3)?0:Math.PI);
     const swing=Math.sin(phase)*stride;
     leg.rotation.x=actualSpeed>.12?swing:THREE.MathUtils.damp(leg.rotation.x,0,10,dt);
-    leg.rotation.z=actualSpeed>.12?Math.cos(phase)*.045*gait:THREE.MathUtils.damp(leg.rotation.z,0,9,dt);
+    leg.rotation.z=actualSpeed>.12?Math.cos(phase)*(inWater?.16:.045)*gait:THREE.MathUtils.damp(leg.rotation.z,0,9,dt);
   });
   const breathing=Math.sin(performance.now()*.0018)*.012;
-  const bodyBob=grounded?Math.abs(Math.sin(walkTime*2))*gait*.018:0;
+  const bodyBob=grounded?Math.abs(Math.sin(walkTime*2))*gait*(inWater?.035:.018):0;
   player.userData.torso.scale.y=.67+breathing+bodyBob;
-  player.userData.torso.rotation.z=THREE.MathUtils.damp(player.userData.torso.rotation.z,-gait*.025,5,dt);
+  player.userData.torso.rotation.z=THREE.MathUtils.damp(player.userData.torso.rotation.z,-gait*(inWater?.045:.025),5,dt);
   player.userData.head.rotation.z=(actualSpeed>.12?Math.sin(walkTime)*.035*gait:0)+Math.sin(performance.now()*.0007)*.012;
   player.userData.head.rotation.x=actualSpeed>.12?Math.sin(walkTime*.5)*.02*gait:0;
   player.userData.tail.rotation.z=Math.sin(walkTime*.72)*(.08+gait*.1)+(sprinting?.04:0);
@@ -544,7 +560,10 @@ function animate(){
   if(started&& !paused){updatePlayer(dt);updateCollectibles(dt);updateGlacialCollectibles(dt);updateCerradoCollectibles(dt);wildlife?.update(dt);glacialMammoths?.update(dt);companions?.update(dt);portal?.update(dt,player);cerradoWildlife?.update(dt);cerradoBiome?.update(dt,player);if(cerradoGate&&glacialMode&&!cerradoGate.userData.prompted&&player.position.distanceTo(cerradoGate.position)<3.4){cerradoGate.userData.prompted=true;showDialogue('Uma nova paisagem espera','O vale está salvo. Pressione E ou ATRAVESSAR para conhecer o Cerrado brasileiro.','ATRAVESSAR');document.querySelector('#closeDialogueBtn').onclick=enterCerradoChapter;}}
   if(started&&!paused&&dt>0){autosaveElapsed+=dt;if(autosaveElapsed>=12){autosaveElapsed=0;saveProgress();}const unlocked=journal.tick(dt,{weather:atmosphere?.weather});if(unlocked.length){const item=journal.getAll().find(entry=>entry.id===unlocked[0]);const toast=document.querySelector('#achievementToast');if(toast&&item){toast.textContent='🏆 Conquista: '+item.title;toast.classList.remove('hidden');setTimeout(()=>toast.classList.add('hidden'),3200);}refreshJournal();}}
   if(ambientLife&&!glacialMode&&!cerradoMode)ambientLife.update(dt,player);
-  worldVisuals?.update(dt,player,glacialMode,cerradoMode);
+  worldVisuals?.update(dt,player,glacialMode,cerradoMode,atmosphere?.weather||'clear');
+  const windAmount=['storm','blizzard'].includes(atmosphere?.weather)?1.7:['wind','dust','rain','snow'].includes(atmosphere?.weather)?1.15:.55;
+  windFoliage.forEach((foliage,index)=>{foliage.rotation.z=Math.sin((clock?.elapsedTime||0)*.72+foliage.userData.windPhase)*.018*windAmount;foliage.rotation.x=Math.cos((clock?.elapsedTime||0)*.48+foliage.userData.windPhase)*.009*windAmount;});
+  const riverShader=scene?.userData.riverMaterial?.userData.shader;if(riverShader)riverShader.uniforms.uRiverTime.value=clock?.elapsedTime||0;
   survival.renderHUD();
   atmosphere?.update(dt,player,glacialMode?'glacial':cerradoMode?'cerrado':'amazon');
   if(explorationHUD&&player){const points=[];const add=(items,color)=>items.forEach(item=>{if(!item.userData.collected&&item.visible)points.push({x:item.position.x,z:item.position.z,color});});add(fruits,'#f1c45d');add(iceCrystals,'#7ce8ff');add(cerradoSeeds,'#f3d56d');if(portal?.root?.visible)points.push({x:portal.root.position.x,z:portal.root.position.z,color:'#d99cff',size:5});explorationHUD.update({player,camera,points,heading:player.rotation.y,biome:glacialMode?'glacial':cerradoMode?'cerrado':'amazon'});}
