@@ -46,6 +46,7 @@ export class GlacialMammoths {
       this.calf.rotation.y=Math.sin(this.phase*.7)*.18;
     }
   }
+  dispose(){ this.scene.remove(this.parent); this.scene.remove(this.calf); }
   interact(){
     if(this.rescued)return false;
     if(this.calf.position.distanceTo(this.player.position)>3.2)return false;
