@@ -31,13 +31,15 @@ Depois de publicar uma prévia do branch, a página fica em `/prototype-3d/`. Pa
 - Família de mamutes na Era Glacial: encontre o filhote perdido e pressione E ou CONVERSAR para reuni-lo à mãe; o filhote passa a acompanhar o adulto e o resgate fica salvo.
 - Objetivo glacial integrado: reunir os cinco cristais e resgatar o filhote; o HUD prioriza a tarefa pendente e reconhece a conclusão do vale quando as duas metas forem cumpridas.
 - Terceiro capítulo no Cerrado brasileiro, com chapadas, veredas, ipês, buritis, riacho e vegetação de campo.
-- Missão do Cerrado: reunir cinco sementes douradas e ajudar um tamanduá-bandeira; o progresso do capítulo é salvo localmente.
+- Missão do Cerrado: reunir cinco sementes douradas, ajudar o tamanduá-bandeira e registrar encontros com lobo-guará, seriema e tatu-canastra; os encontros são salvos localmente.
+- Fauna do Cerrado com deslocamento, exploração de território e interação por proximidade.
+- Sistema de paisagem sonora procedural com controle de ligar/desligar, sem arquivos externos de áudio.
 - Transição do vale glacial para o Cerrado após concluir o resgate do filhote e reunir os cinco cristais.
 - Salvamento local de frutos, conversas, capítulos, cristais, sementes e ajuda ao tamanduá-bandeira.
 
 ### Limitações conhecidas
 
-Este é um primeiro protótipo jogável, não o jogo final. A capivara ainda usa geometria procedural, sem modelo GLB nem animações profissionais; a física e as colisões são simplificadas; o sistema de vidas e progressão ainda não está completo; não há áudio, combate ou uma campanha completa. O progresso local cobre a coleta, conversas e o desbloqueio do capítulo; ainda não há sincronização entre dispositivos nem um mapa glacial com missões próprias. O terceiro capítulo é uma região demonstrativa do Cerrado; o tamanduá-bandeira é um personagem de missão, ainda sem comportamento ecológico avançado. Os pássaros e borboletas são elementos ambientais simples, não fauna com IA ou rotinas ecológicas completas. O protótipo depende de conexão com a internet para carregar Three.js do CDN.
+Este é um primeiro protótipo jogável, não o jogo final. A capivara ainda usa geometria procedural, sem modelo GLB nem animações profissionais; a física e as colisões são simplificadas; o sistema de vidas e progressão ainda não está completo; não há áudio, combate ou uma campanha completa. O progresso local cobre a coleta, conversas e o desbloqueio do capítulo; ainda não há sincronização entre dispositivos nem um mapa glacial com missões próprias. Os animais do Cerrado usam rotinas simples de deslocamento e observação, não simulação ecológica completa. A paisagem sonora é sintetizada pelo navegador e não substitui gravações naturais ou trilha profissional. Os pássaros e borboletas são elementos ambientais simples, não fauna com IA ou rotinas ecológicas completas. O protótipo depende de conexão com a internet para carregar Three.js do CDN.
 
 A compatibilidade e o desempenho ainda precisam ser verificados em aparelhos reais, especialmente no Samsung A07. O branch é de desenvolvimento e não foi mesclado à produção nem implantado no Cloudflare.
 
