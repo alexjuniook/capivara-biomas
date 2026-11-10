@@ -72,5 +72,5 @@ export function buildCerradoBiome(scene, quality = 1) {
     add(seed); seeds.push(seed);
   });
 
-  return { seeds, anteater, dispose(){ for(const object of added) scene.remove(object); } };
+  return { seeds, anteater, dispose(){\n    const geometries=new Set(),materials=new Set();\n    for(const object of added){scene.remove(object);object.traverse?.(child=>{if(child.geometry)geometries.add(child.geometry);if(child.material){for(const m of (Array.isArray(child.material)?child.material:[child.material]))materials.add(m);}});}\n    geometries.forEach(g=>g.dispose());materials.forEach(m=>m.dispose());\n  } };
 }
