@@ -15,7 +15,7 @@ const missionText = document.querySelector('#missionText');
 const heartsText = document.querySelector('#hearts');
 
 let renderer, scene, camera, director, player, clock, ambientLife, companions, portal;
-let glacialMode = false, snowParticles = null, snowDummy = null, snowPositions = [], glacialBiome = null;
+let glacialMode = false, snowParticles = null, snowDummy = null, snowPositions = [], glacialBiome = null, iceCrystals = [], glacialCrystals = 0, savedGlacialCrystals = [];
 const progressStore = new ProgressStore();
 let started = false, collected = 0, lives = 3;
 const keys = { forward:0, right:0, jump:false, run:false };
@@ -188,10 +188,12 @@ function updatePlayer(dt){
   for(const obstacle of obstacles){const p=new THREE.Vector3();obstacle.getWorldPosition(p);const radius=obstacle.geometry?.parameters?.radius||.6;const dx=player.position.x-p.x,dz=player.position.z-p.z;const min=radius+.7;if(dx*dx+dz*dz<min*min&&Math.abs(player.position.y)<1.2){const d=Math.max(.001,Math.hypot(dx,dz));player.position.x=p.x+dx/d*min;player.position.z=p.z+dz/d*min;}}
 }
 function saveProgress(){
-  progressStore.save({collected:fruits.map((fruit,index)=>fruit.userData.collected?index:null).filter(index=>index!==null),talked:companions?.talkedNames||[],portalUnlocked:portal?.unlocked,glacialMode});
+  progressStore.save({collected:fruits.map((fruit,index)=>fruit.userData.collected?index:null).filter(index=>index!==null),talked:companions?.talkedNames||[],portalUnlocked:portal?.unlocked,glacialMode,glacialCrystals:iceCrystals.filter(c=>c.userData.collected).map(c=>c.userData.index)});
 }
 function restoreProgress(){
   const saved=progressStore.load();
+  savedGlacialCrystals=Array.isArray(saved.glacialCrystals)?saved.glacialCrystals:[];
+  glacialCrystals=savedGlacialCrystals.length;
   const collectedSet=new Set(Array.isArray(saved.collected)?saved.collected:[]);
   fruits.forEach((fruit,index)=>{if(collectedSet.has(index)){fruit.userData.collected=true;fruit.visible=false;collected++;}});
   fruitCount.textContent=collected;
@@ -237,6 +239,13 @@ function enterGlacialChapter(){
   scene.fog.color.set('#c6e5ed');scene.fog.density=.018;
   scene.traverse(obj=>{if(obj.isMesh&&obj.material?.color&&obj.name!=='fruto'){const color=obj.material.color;if(color.g>.28&&color.r<.5){color.lerp(new THREE.Color('#a9c5c9'),.38);}}});
   glacialBiome=buildGlacialBiome(scene,innerWidth<700?.55:1);
+  iceCrystals=glacialBiome.crystals||[];
+  iceCrystals.forEach(crystal=>{if(savedGlacialCrystals.includes(crystal.userData.index)){crystal.userData.collected=true;crystal.visible=false;}});
+  glacialCrystals=iceCrystals.filter(crystal=>crystal.userData.collected).length;
+  document.querySelector('#fruitStat')?.classList.add('hidden');
+  document.querySelector('#iceStat')?.classList.remove('hidden');
+  document.querySelector('#iceCount').textContent=glacialCrystals;
+  missionText.textContent=glacialCrystals>=5?'Cristais reunidos! Explore o vale':'Encontre os cristais azuis: '+glacialCrystals+'/5';
   snowDummy=new THREE.Object3D();
   const snowCount=innerWidth<700?180:420;
   snowParticles=new THREE.InstancedMesh(new THREE.SphereGeometry(.035,5,4),new THREE.MeshBasicMaterial({color:'#f4fbff'}),snowCount);
@@ -248,9 +257,24 @@ function enterGlacialChapter(){
 function updateCollectibles(dt){
   for(const fruit of fruits){if(fruit.userData.collected)continue;fruit.rotation.y+=dt*1.2;fruit.position.y=fruit.userData.baseY+Math.sin(performance.now()*.002+fruit.position.z)*.12;if(fruit.position.distanceTo(player.position.clone().add(new THREE.Vector3(0,1,0)))<1.45){fruit.userData.collected=true;fruit.visible=false;collected++;fruitCount.textContent=collected;saveProgress();if(collected===fruits.length){if(companions?.talkedNames.includes('Tico')){portal?.unlock();missionText.textContent='Portal aberto! Encontre a passagem congelada';}else{missionText.textContent='Frutos encontrados! Converse com Tico';}showDialogue('Missão concluída','Você encontrou todos os frutos! Procure Tico para descobrir como atravessar.');}}}
 }
+function updateGlacialCollectibles(dt){
+  if(!glacialMode||!iceCrystals.length)return;
+  for(const crystal of iceCrystals){
+    if(crystal.userData.collected)continue;
+    crystal.rotation.y+=dt*0.8;
+    crystal.position.y=crystal.userData.baseY+Math.sin(performance.now()*0.002+crystal.userData.index)*0.16;
+    if(crystal.position.distanceTo(player.position.clone().add(new THREE.Vector3(0,1,0)))<1.8){
+      crystal.userData.collected=true;crystal.visible=false;glacialCrystals++;
+      document.querySelector('#iceCount').textContent=glacialCrystals;
+      missionText.textContent=glacialCrystals>=5?'Cristais reunidos! O vale revelou seu segredo':'Encontre os cristais azuis: '+glacialCrystals+'/5';
+      saveProgress();
+      if(glacialCrystals===5)showDialogue('Missão glacial concluída!','Você reuniu os cinco cristais ancestrais. A luz deles revela marcas antigas no gelo — a jornada continua para além deste vale.');
+    }
+  }
+}
 function animate(){
   requestAnimationFrame(animate);const dt=Math.min(clock.getDelta(),.04);
-  if(started){updatePlayer(dt);updateCollectibles(dt);companions?.update(dt);portal?.update(dt,player);}
+  if(started){updatePlayer(dt);updateCollectibles(dt);updateGlacialCollectibles(dt);companions?.update(dt);portal?.update(dt,player);}
   if(ambientLife)ambientLife.update(dt,player);
   if(glacialMode&&snowParticles){for(let i=0;i<snowPositions.length;i++){const p=snowPositions[i];p.y-=dt*(1.4+(i%5)*.25);p.x+=Math.sin(performance.now()*.0004+i)*dt*.25;if(p.y<0)p.set(player.position.x+(Math.random()-.5)*34,12+Math.random()*8,player.position.z-Math.random()*45);snowDummy.position.copy(p);snowDummy.updateMatrix();snowParticles.setMatrixAt(i,snowDummy.matrix);}snowParticles.instanceMatrix.needsUpdate=true;}
   director.update(dt);
