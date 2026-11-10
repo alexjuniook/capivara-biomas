@@ -59,7 +59,7 @@ export function buildCerradoBiome(scene, quality = 1) {
   anteater.traverse(o=>{if(o.isMesh){o.castShadow=true;o.receiveShadow=true;}});
   add(anteater);
 
-  // Five glowing golden seeds form the chapter's exploration objective.
+  // Golden pollen drifts over the vereda without expensive individual meshes.\n  const pollenCount=Math.round(quality>.7?72:28);\n  const pollenGeometry=new THREE.SphereGeometry(.045,5,4);\n  const pollenMaterial=new THREE.MeshBasicMaterial({color:'#f7e2a1',transparent:true,opacity:.72});\n  const pollen=new THREE.InstancedMesh(pollenGeometry,pollenMaterial,pollenCount);\n  const pollenDummy=new THREE.Object3D();\n  const pollenPositions=Array.from({length:pollenCount},()=>new THREE.Vector3((Math.random()-.5)*38,Math.random()*7,8-Math.random()*82));\n  pollen.frustumCulled=false;add(pollen);\n\n  // Five glowing golden seeds form the chapter's exploration objective.
   const seeds=[];
   const seedMat=new THREE.MeshStandardMaterial({color:'#f4d36d',emissive:'#9b6415',emissiveIntensity:.45,metalness:.25,roughness:.28});
   [[-3,-14],[5,-26],[-7,-39],[8,-53],[-2,-68]].forEach(([x,z],index)=>{
@@ -72,7 +72,7 @@ export function buildCerradoBiome(scene, quality = 1) {
     add(seed); seeds.push(seed);
   });
 
-  return { seeds, anteater, dispose(){
+  return { seeds, anteater, update(dt,focus){\n    const center=focus?.position||new THREE.Vector3();\n    for(let i=0;i<pollenCount;i++){const p=pollenPositions[i];p.y+=dt*(.12+(i%4)*.035);p.x+=Math.sin(performance.now()*.00025+i)*dt*.08;if(p.y>7.5)p.set(center.x+(Math.random()-.5)*34,.3+Math.random()*2,center.z-Math.random()*48);pollenDummy.position.copy(p);pollenDummy.updateMatrix();pollen.setMatrixAt(i,pollenDummy.matrix);}\n    pollen.instanceMatrix.needsUpdate=true;\n  }, dispose(){
     const geometries=new Set(),materials=new Set();
     for(const object of added){scene.remove(object);object.traverse?.(child=>{if(child.geometry)geometries.add(child.geometry);if(child.material){for(const m of (Array.isArray(child.material)?child.material:[child.material]))materials.add(m);}});}
     geometries.forEach(g=>g.dispose());materials.forEach(m=>m.dispose());
