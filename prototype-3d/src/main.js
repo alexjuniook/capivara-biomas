@@ -3,6 +3,7 @@ import { CameraDirector } from './camera/CameraDirector.js';
 import { AmbientLife } from './world/AmbientLife.js';
 import { CompanionSystem } from './characters/CompanionSystem.js';
 import { GlacialPortal } from './world/GlacialPortal.js';
+import { buildGlacialBiome } from './world/GlacialBiome.js';
 
 const viewport = document.querySelector('#viewport');
 const loading = document.querySelector('#loading');
@@ -13,7 +14,7 @@ const missionText = document.querySelector('#missionText');
 const heartsText = document.querySelector('#hearts');
 
 let renderer, scene, camera, director, player, clock, ambientLife, companions, portal;
-let glacialMode = false, snowParticles = null, snowDummy = null, snowPositions = [];
+let glacialMode = false, snowParticles = null, snowDummy = null, snowPositions = [], glacialBiome = null;
 let started = false, collected = 0, lives = 3;
 const keys = { forward:0, right:0, jump:false, run:false };
 const solids = [];
@@ -215,8 +216,7 @@ function enterGlacialChapter(){
   scene.background.set('#b9dce8');
   scene.fog.color.set('#c6e5ed');scene.fog.density=.018;
   scene.traverse(obj=>{if(obj.isMesh&&obj.material?.color&&obj.name!=='fruto'){const color=obj.material.color;if(color.g>.28&&color.r<.5){color.lerp(new THREE.Color('#a9c5c9'),.38);}}});
-  const snow=new THREE.Mesh(new THREE.PlaneGeometry(180,180),material('#dcebf0'));snow.rotation.x=-Math.PI/2;snow.position.y=.035;scene.add(snow);
-  for(let i=0;i<22;i++){const shard=new THREE.Mesh(new THREE.ConeGeometry(.45+Math.random()*.5,2+Math.random()*3,5),material('#9bd6e6',.3,{metalness:.08,transparent:true,opacity:.88}));shard.position.set((Math.random()-.5)*22,1,-10-Math.random()*65);shard.rotation.z=(Math.random()-.5)*.2;scene.add(shard);}
+  glacialBiome=buildGlacialBiome(scene,innerWidth<700?.55:1);
   snowDummy=new THREE.Object3D();
   const snowCount=innerWidth<700?180:420;
   snowParticles=new THREE.InstancedMesh(new THREE.SphereGeometry(.035,5,4),new THREE.MeshBasicMaterial({color:'#f4fbff'}),snowCount);
