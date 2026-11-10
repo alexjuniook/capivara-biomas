@@ -4,7 +4,7 @@ export class SurvivalSystems {
   constructor(storage=globalThis.localStorage){
     this.storage=storage;
     this.state={health:100,hunger:100,hydration:100,temperature:50,wetness:0,oxygen:100,staminaBonus:0,foodBuff:0,waterBuff:0,scareCooldown:0,dodgeCooldown:0,combo:0,comboTimer:0,discoveries:[],inventory:{fruits:0,crystals:0,seeds:0,wood:0},quests:{surviveDay:0,visitWater:false,findShelter:false},inWater:false,weather:'clear',biome:'amazon',lastHint:''};
-    this.load();this.hud=document.querySelector('#survivalStatus');this.lastHud=0;
+    this.load();this.hud=globalThis.document?.querySelector('#survivalStatus')||null;this.lastHud=0;
   }
   load(){try{const saved=JSON.parse(this.storage?.getItem(STORAGE_KEY)||'{}');for(const key of ['health','hunger','hydration','temperature','wetness','oxygen','staminaBonus','foodBuff','waterBuff'])if(Number.isFinite(saved[key]))this.state[key]=clamp(saved[key],0,100);if(saved.inventory&&typeof saved.inventory==='object')for(const key of Object.keys(this.state.inventory))if(Number.isFinite(saved.inventory[key]))this.state.inventory[key]=Math.max(0,Math.floor(saved.inventory[key]));if(Array.isArray(saved.discoveries))this.state.discoveries=saved.discoveries.slice(0,100);}catch{}}
   save(){try{this.storage?.setItem(STORAGE_KEY,JSON.stringify({...this.state,updatedAt:Date.now()}));return true;}catch{return false;}}
