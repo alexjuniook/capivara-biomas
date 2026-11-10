@@ -95,7 +95,11 @@ export class CompanionSystem {
     return true;
   }
 
-  restoreTalked(names = []) {\n    for (const item of this.items) item.talked = names.includes(item.name);\n  }\n\n  get talkedNames() {
+  restoreTalked(names = []) {
+    for (const item of this.items) item.talked = names.includes(item.name);
+  }
+
+  get talkedNames() {
     return this.items.filter(item => item.talked).map(item => item.name);
   }
 }
