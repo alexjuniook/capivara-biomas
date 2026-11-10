@@ -12,7 +12,7 @@ function makeGuara(scene,x,z){
   mesh(root,new THREE.ConeGeometry(.16,.55,8),rust,[.72,2.25,0],[.8,1,.8]).rotation.z=-.9;
   mesh(root,new THREE.SphereGeometry(.13,10,8),black,[.68,1.88,0],[1.3,.7,.8]);
   mesh(root,new THREE.SphereGeometry(.12,10,8),black,[-.62,1.15,0],[.65,.65,.65]);
-  for(const px of [-.34,.32])for(const pz of [-.32,.32])mesh(root,new THREE.CylinderGeometry(.07,.09,.9,7),black,[px,.48,pz]);
+  const legs=[];\n  for(const px of [-.34,.32])for(const pz of [-.32,.32]){const leg=mesh(root,new THREE.CylinderGeometry(.07,.09,.9,7),black,[px,.48,pz]);legs.push(leg);}\n  root.userData.legs=legs;\n  const tail=mesh(root,new THREE.ConeGeometry(.12,.9,7),black,[-.68,1.05,0]);tail.rotation.z=Math.PI/2;root.userData.tail=tail;
   root.position.set(x,0,z);scene.add(root);return root;
 }
 function makeSeriema(scene,x,z){
@@ -21,7 +21,7 @@ function makeSeriema(scene,x,z){
   mesh(root,new THREE.SphereGeometry(.22,10,8),feather,[.28,1.65,0],[.9,1.1,.8]);
   mesh(root,new THREE.ConeGeometry(.11,.48,7),beak,[.53,1.58,0],[.8,1,.8]).rotation.z=-Math.PI/2;
   mesh(root,new THREE.ConeGeometry(.045,.45,5),feather,[.26,1.98,0],[1,1,.8]);
-  for(const px of [-.18,.18])mesh(root,new THREE.CylinderGeometry(.035,.05,.75,6),leg,[px,.38,0]);
+  const legs=[];\n  for(const px of [-.18,.18])legs.push(mesh(root,new THREE.CylinderGeometry(.035,.05,.75,6),leg,[px,.38,0]));\n  root.userData.legs=legs;
   root.position.set(x,0,z);scene.add(root);return root;
 }
 function makeArmadillo(scene,x,z){
@@ -29,7 +29,7 @@ function makeArmadillo(scene,x,z){
   mesh(root,new THREE.SphereGeometry(.56,12,10),shell,[0,.72,0],[1.15,.82,.8]);
   mesh(root,new THREE.SphereGeometry(.27,10,8),hide,[.58,.58,0],[1.2,.7,.65]);
   mesh(root,new THREE.ConeGeometry(.12,.55,8),dark,[.86,.48,0],[.7,1,.7]).rotation.z=-Math.PI/2;
-  for(const px of [-.42,.38])for(const pz of [-.38,.38])mesh(root,new THREE.CylinderGeometry(.09,.1,.35,7),dark,[px,.24,pz]);
+  const legs=[];\n  for(const px of [-.42,.38])for(const pz of [-.38,.38])legs.push(mesh(root,new THREE.CylinderGeometry(.09,.1,.35,7),dark,[px,.24,pz]));\n  root.userData.legs=legs;
   // Armor bands make the animal readable even at mobile render scale.
   for(let i=-1;i<=1;i++){const band=mesh(root,new THREE.TorusGeometry(.39,.035,5,14),hide,[i*.2,.75,0],[1,.9,1]);band.rotation.z=Math.PI/2;}
   root.position.set(x,0,z);scene.add(root);return root;
