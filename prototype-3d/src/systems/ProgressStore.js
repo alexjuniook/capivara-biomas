@@ -13,6 +13,7 @@ export class ProgressStore {
         talked: Array.isArray(progress.talked) ? progress.talked : [],
         portalUnlocked: Boolean(progress.portalUnlocked),
         glacialMode: Boolean(progress.glacialMode),
+        glacialCrystals: Array.isArray(progress.glacialCrystals) ? progress.glacialCrystals : [],
         updatedAt: Date.now()
       }));
       return true;
