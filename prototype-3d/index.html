@@ -15,8 +15,8 @@
   <main id="game">
     <div id="viewport" aria-label="Mundo 3D da aventura"></div>
     <header class="hud">
-      <div class="brand"><span>🦫</span><div><strong>O Segredo das Duas Eras</strong><small>Capítulo 1 · Amazônia</small></div></div>
-      <div class="stats"><span id="fruitStat">🍈 <b id="fruitCount">0</b>/8</span><span id="iceStat" class="hidden">💎 <b id="iceCount">0</b>/5</span><span>♥ <b id="hearts">3</b></span></div>
+      <div class="brand"><span>🦫</span><div><strong>O Segredo das Três Eras</strong><small>Capítulo 1 · Amazônia</small></div></div>
+      <div class="stats"><button id="audioBtn" type="button" aria-label="Ativar ou desativar sons">SOM: LIGADO</button><span id="fruitStat">🍈 <b id="fruitCount">0</b>/8</span><span id="iceStat" class="hidden">💎 <b id="iceCount">0</b>/5</span><span>♥ <b id="hearts">3</b></span></div>
     </header>
     <section class="mission"><small>MISSÃO ATUAL</small><strong id="missionText">Encontre os frutos da floresta</strong></section>
     <div class="camera-panel" aria-label="Modos de câmera">
@@ -32,7 +32,7 @@
     <section id="dialogue" class="dialogue hidden" role="dialog" aria-live="polite"><div class="dialogue-card"><small>ENCONTRO</small><h2 id="dialogueTitle">Personagem</h2><p id="dialogueText"></p><button id="closeDialogueBtn">CONTINUAR</button></div></section>
     <section id="iceInvitation" class="hidden"></section>
     <div id="loading" class="loading"><div class="loader"></div><strong>Preparando a floresta...</strong><small>Carregando o primeiro mundo 3D</small></div>
-    <div id="message" class="message hidden"><div class="message-card"><small>AVENTURA</small><h1>Bem-vindo à Amazônia!</h1><p>Explore a floresta, colete frutos e descubra o caminho para o segredo das duas eras.</p><button id="startBtn">COMEÇAR A JORNADA</button></div></div>
+    <div id="message" class="message hidden"><div class="message-card"><small>AVENTURA</small><h1>Bem-vindo à Amazônia!</h1><p>Explore a floresta, colete frutos e descubra os três capítulos da aventura: Amazônia, Era Glacial e Cerrado.</p><button id="startBtn">COMEÇAR A JORNADA</button></div></div>
     <div id="error" class="error hidden"></div>
   </main>
   <script type="module" src="./src/main.js"></script>
