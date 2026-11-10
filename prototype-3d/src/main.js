@@ -129,6 +129,29 @@ function makeCapybara() {
   root.userData.legs=legs;root.userData.ears=ears;root.userData.eyes=eyes;root.userData.head=head;root.userData.torso=torso;
   const tail=sphere(root,'cauda',.12,[-1.02,.92,0],fur,12);tail.scale.set(1.35,.55,.55);
   for(const side of [-1,1]){const whisker=new THREE.Mesh(new THREE.CylinderGeometry(.012,.008,.42,5),dark);whisker.position.set(1.34,1.03,side*.2);whisker.rotation.z=-.12;whisker.rotation.x=side*.42;root.add(whisker);}
+  // Nose pores, layered cheek fur and individual toes improve the close-up silhouette.
+  for(const side of [-1,1]){
+    const nostril=sphere(root,'narina',.035,[1.57,1.19,side*.075],eye,10);
+    nostril.scale.set(.55,.8,.7);
+    for(let whisker=0;whisker<3;whisker++){
+      const filament=new THREE.Mesh(new THREE.CylinderGeometry(.006,.003,.34,4),muzzle);
+      filament.position.set(1.3,1.08-whisker*.055,side*(.24+whisker*.035));
+      filament.rotation.z=.18+whisker*.12;filament.rotation.x=side*.55;root.add(filament);
+    }
+  }
+  for(let i=0;i<11;i++){
+    const tuft=new THREE.Mesh(new THREE.ConeGeometry(.055,.19,5),fur);
+    const x=-.72+i*.14;
+    tuft.position.set(x,1.48+Math.sin(i*.55)*.045,-.08);
+    tuft.rotation.z=-.38;root.add(tuft);
+  }
+  legs.forEach((leg,index)=>{
+    const toeMat=claw;
+    for(let toe=0;toe<3;toe++){
+      const digit=sphere(leg,'dedo',.065,[.12,-.51,(toe-1)*.095],toeMat,10);
+      digit.scale.set(1.35,.58,.7);
+    }
+  });
   // Small cheek tufts and subtle fur ridges give the silhouette more character.
   for(let i=0;i<5;i++){const tuft=new THREE.Mesh(new THREE.ConeGeometry(.075,.22,5),furLight);tuft.position.set(.15+i*.18,1.55,-.47);tuft.rotation.z=-.55;root.add(tuft);}
   // Fine procedural coat: a low-cost instanced layer that breaks the smooth toy-like silhouette.
@@ -471,7 +494,7 @@ function enterGlacialChapter(){
   scene.background.set('#b9dce8');
   scene.fog.color.set('#c6e5ed');scene.fog.density=.018;
   scene.traverse(obj=>{if(obj.isMesh&&obj.material?.color&&obj.name!=='fruto'){const color=obj.material.color;if(color.g>.28&&color.r<.5){color.lerp(new THREE.Color('#a9c5c9'),.38);}}});
-  scene.userData.terrain?.dispose();scene.userData.terrain=createTerrain(scene,{biome:'glacial',quality:innerWidth<700?.55:1,materialColor:'#e7f2f5'});
+  scene.userData.terrain?.dispose();scene.userData.terrain=null;
   glacialBiome=buildGlacialBiome(scene,innerWidth<700?.55:1);
   wildlife=new GlacialWildlife({scene,player,onDamage:takeDamage,onDefeated:()=>showDialogue('Predador afastado!','Você conseguiu espantar o lobo-das-neves. Continue atento: ainda há outro pelo vale.')});
   glacialMammoths=new GlacialMammoths({scene,player,restored:savedMammothRescued,onRescue:()=>{savedMammothRescued=true;recordJournal('mammoth');updateGlacialMission();saveProgress();showDialogue('A família está reunida!','O filhote encontrou sua mãe. Bento reconhece os chamados e agora sabe que não está sozinho neste mundo gelado.');}});
@@ -533,7 +556,7 @@ function enterCerradoChapter(){
   glacialMode=false;cerradoMode=true;checkpoints.setBiome('cerrado');stamina.reset();journal.visitBiome('cerrado');
   wildlife?.dispose();wildlife=null;glacialMammoths?.dispose();glacialMammoths=null;cerradoWildlife?.dispose();cerradoWildlife=null;
   if(glacialBiome){glacialBiome.dispose();glacialBiome=null;}
-  scene.userData.terrain?.dispose();scene.userData.terrain=createTerrain(scene,{biome:'cerrado',quality:innerWidth<700?.55:1,materialColor:'#b58b58'});
+  scene.userData.terrain?.dispose();scene.userData.terrain=null;
   if(snowParticles){scene.remove(snowParticles);snowParticles.geometry.dispose();snowParticles.material.dispose();snowParticles=null;}
   if(cerradoGate){scene.remove(cerradoGate);cerradoGate.traverse(o=>{o.geometry?.dispose();if(o.material){for(const m of (Array.isArray(o.material)?o.material:[o.material]))m.dispose();}});cerradoGate=null;}
   scene.background.set('#e9c98d');scene.fog.color.set('#d7b77f');scene.fog.density=.009;
