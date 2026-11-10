@@ -331,9 +331,11 @@ function enterCerradoChapter(){
 }
 function updateCerradoMission(){
   if(!cerradoMode)return;
-  if(cerradoSeedCount>=5&&anteaterHelped)missionText.textContent='Vereda restaurada! Capítulo do Cerrado concluído';
-  else if(cerradoSeedCount<5)missionText.textContent='Encontre as sementes douradas · '+cerradoSeedCount+'/5'+(anteaterHelped?' · Tamanduá ajudado':'');
-  else missionText.textContent='Ajude o tamanduá-bandeira perto das árvores · Sementes 5/5';
+  const seen=cerradoWildlife?.observedNames.length||savedCerradoAnimals.length;
+  if(cerradoSeedCount>=5&&anteaterHelped&&seen>=3)missionText.textContent='Vereda restaurada! Fauna registrada · Capítulo concluído';
+  else if(cerradoSeedCount<5)missionText.textContent='Sementes douradas '+cerradoSeedCount+'/5 · Fauna '+seen+'/3';
+  else if(!anteaterHelped)missionText.textContent='Ajude o tamanduá-bandeira · Sementes 5/5 · Fauna '+seen+'/3';
+  else missionText.textContent='Observe lobo-guará, seriema e tatu-canastra · '+seen+'/3';
 }
 function updateCerradoCollectibles(dt){
   if(!cerradoMode||!cerradoSeeds.length)return;
